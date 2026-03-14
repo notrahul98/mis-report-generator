@@ -1,0 +1,1332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MIS Report Generator — Rahul Kumar Jha, CA</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+<style>
+:root {
+  --navy: #0f1f3d;
+  --navy-mid: #1a3460;
+  --navy-light: #234080;
+  --gold: #c9a84c;
+  --gold-light: #e8c97a;
+  --cream: #f7f5f0;
+  --white: #ffffff;
+  --slate: #4a5568;
+  --slate-light: #718096;
+  --border: #e2e8f0;
+  --border-dark: #cbd5e0;
+  --red: #c0392b;
+  --green: #1a7a4a;
+  --red-bg: #fdf2f2;
+  --green-bg: #f0faf5;
+  --shadow-sm: 0 1px 3px rgba(15,31,61,0.08);
+  --shadow-md: 0 4px 16px rgba(15,31,61,0.10);
+  --shadow-lg: 0 8px 32px rgba(15,31,61,0.13);
+  --radius: 8px;
+  --radius-lg: 14px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px;
+  color: var(--navy);
+  background: var(--cream);
+  line-height: 1.6;
+}
+
+/* ─── NAV ─────────────────────────────── */
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: var(--navy);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 40px; height: 60px;
+  border-bottom: 1px solid var(--navy-mid);
+}
+.nav-logo { font-family: 'DM Serif Display', serif; font-size: 18px; color: var(--white); letter-spacing: 0.01em; }
+.nav-logo span { color: var(--gold); }
+.nav-links { display: flex; gap: 28px; }
+.nav-links a { color: rgba(255,255,255,0.75); font-size: 13px; font-weight: 500; text-decoration: none; letter-spacing: 0.03em; transition: color 0.2s; }
+.nav-links a:hover { color: var(--gold); }
+.nav-cta { background: var(--gold); color: var(--navy); font-size: 13px; font-weight: 600; padding: 8px 18px; border-radius: var(--radius); text-decoration: none; letter-spacing: 0.02em; transition: background 0.2s; }
+.nav-cta:hover { background: var(--gold-light); }
+
+/* ─── HERO ────────────────────────────── */
+#home {
+  min-height: 100vh;
+  background: var(--navy);
+  display: flex; align-items: center;
+  padding: 100px 40px 60px;
+  position: relative; overflow: hidden;
+}
+.hero-grid {
+  position: absolute; inset: 0; opacity: 0.04;
+  background-image: linear-gradient(var(--gold) 1px, transparent 1px), linear-gradient(90deg, var(--gold) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+.hero-content { max-width: 1100px; margin: 0 auto; position: relative; z-index: 1; width: 100%; }
+.hero-tag { display: inline-flex; align-items: center; gap: 8px; background: rgba(201,168,76,0.15); border: 1px solid rgba(201,168,76,0.3); color: var(--gold); font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; padding: 6px 14px; border-radius: 20px; margin-bottom: 28px; }
+.hero-tag::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--gold); display: inline-block; }
+h1.hero-title { font-family: 'DM Serif Display', serif; font-size: clamp(36px, 5vw, 62px); color: var(--white); line-height: 1.15; margin-bottom: 20px; }
+h1.hero-title em { color: var(--gold); font-style: italic; }
+.hero-sub { font-size: 17px; color: rgba(255,255,255,0.65); max-width: 580px; margin-bottom: 40px; line-height: 1.7; font-weight: 300; }
+.hero-btns { display: flex; gap: 14px; flex-wrap: wrap; }
+.btn-primary { background: var(--gold); color: var(--navy); font-size: 14px; font-weight: 600; padding: 13px 28px; border-radius: var(--radius); text-decoration: none; border: none; cursor: pointer; transition: background 0.2s, transform 0.15s; display: inline-block; }
+.btn-primary:hover { background: var(--gold-light); transform: translateY(-1px); }
+.btn-outline { background: transparent; color: var(--white); font-size: 14px; font-weight: 500; padding: 13px 28px; border-radius: var(--radius); text-decoration: none; border: 1px solid rgba(255,255,255,0.3); cursor: pointer; transition: border-color 0.2s, background 0.2s; display: inline-block; }
+.btn-outline:hover { border-color: var(--gold); color: var(--gold); }
+
+.hero-stats { display: flex; gap: 48px; margin-top: 64px; padding-top: 40px; border-top: 1px solid rgba(255,255,255,0.1); }
+.hero-stat-val { font-family: 'DM Serif Display', serif; font-size: 32px; color: var(--gold); }
+.hero-stat-lbl { font-size: 12px; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 0.06em; margin-top: 2px; }
+
+/* ─── SECTION BASE ────────────────────── */
+section { padding: 80px 40px; }
+.section-inner { max-width: 1100px; margin: 0 auto; }
+.section-eyebrow { font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gold); margin-bottom: 12px; }
+.section-title { font-family: 'DM Serif Display', serif; font-size: clamp(26px, 3.5vw, 40px); color: var(--navy); margin-bottom: 14px; }
+.section-desc { font-size: 15px; color: var(--slate); max-width: 560px; line-height: 1.75; margin-bottom: 48px; font-weight: 300; }
+
+/* ─── FEATURES ────────────────────────── */
+#features { background: var(--white); }
+.features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+.feature-card { border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 28px 24px; background: var(--white); transition: box-shadow 0.2s, transform 0.2s; }
+.feature-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
+.feature-icon { width: 44px; height: 44px; background: var(--navy); border-radius: var(--radius); display: flex; align-items: center; justify-content: center; margin-bottom: 18px; }
+.feature-icon svg { width: 20px; height: 20px; fill: var(--gold); }
+.feature-title { font-size: 15px; font-weight: 600; color: var(--navy); margin-bottom: 8px; }
+.feature-desc { font-size: 13px; color: var(--slate); line-height: 1.65; font-weight: 300; }
+
+/* ─── TOOL SECTION ────────────────────── */
+#tool { background: var(--cream); }
+
+.tool-shell {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+}
+.tool-topbar {
+  background: var(--navy);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 24px;
+}
+.tool-topbar-title { font-family: 'DM Serif Display', serif; font-size: 16px; color: var(--white); }
+.tool-topbar-title span { color: var(--gold); }
+.tool-tabs { display: flex; border-bottom: 1px solid var(--border); background: var(--white); }
+.tool-tab { padding: 12px 20px; font-size: 13px; font-weight: 500; cursor: pointer; color: var(--slate); border-bottom: 2px solid transparent; margin-bottom: -1px; transition: color 0.2s; white-space: nowrap; }
+.tool-tab.active { color: var(--navy); border-bottom-color: var(--navy); }
+.tool-tab:hover:not(.active) { color: var(--navy-light); }
+.tool-panel { padding: 24px; display: none; }
+.tool-panel.active { display: block; }
+
+/* tool inner elements */
+.lbl { font-size: 11px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: var(--slate); margin-bottom: 8px; }
+.upload-zone { border: 1.5px dashed var(--border-dark); border-radius: var(--radius-lg); padding: 36px; text-align: center; cursor: pointer; background: var(--cream); transition: border-color 0.2s, background 0.2s; }
+.upload-zone:hover { border-color: var(--navy); background: #eef2f8; }
+.upload-zone input { display: none; }
+.upload-icon-wrap { width: 48px; height: 48px; background: var(--navy); border-radius: var(--radius); display: flex; align-items: center; justify-content: center; margin: 0 auto 14px; }
+.upload-icon-wrap svg { width: 22px; height: 22px; fill: var(--gold); }
+.upload-title { font-size: 14px; font-weight: 500; color: var(--navy); }
+.upload-sub { font-size: 12px; color: var(--slate-light); margin-top: 4px; }
+
+.action-row { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+.tbtn { padding: 8px 16px; border-radius: var(--radius); font-size: 13px; font-weight: 500; cursor: pointer; border: 1px solid var(--border-dark); background: var(--white); color: var(--navy); transition: background 0.15s; font-family: 'DM Sans', sans-serif; }
+.tbtn:hover { background: var(--cream); }
+.tbtn-navy { background: var(--navy); color: var(--white); border-color: var(--navy); }
+.tbtn-navy:hover { background: var(--navy-mid); }
+.tbtn-gold { background: var(--gold); color: var(--navy); border-color: var(--gold); font-weight: 600; }
+.tbtn-gold:hover { background: var(--gold-light); }
+.tbtn-green { border-color: var(--green); color: var(--green); }
+.tbtn-green:hover { background: var(--green-bg); }
+.tbtn-red { border-color: var(--red); color: var(--red); }
+
+.data-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius-lg); margin-top: 18px; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+thead th { padding: 10px 14px; text-align: left; font-size: 11px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--slate); border-bottom: 1px solid var(--border); background: var(--cream); white-space: nowrap; }
+tbody td { padding: 10px 14px; border-bottom: 1px solid var(--border); color: var(--navy); }
+tbody tr:last-child td { border-bottom: none; }
+tbody tr:hover { background: #f8fafc; }
+.node-header td { font-weight: 600; background: #f1f5fb; font-size: 13px; }
+.node-total td { font-weight: 600; border-top: 2px solid var(--navy); }
+.pos { color: var(--green); font-weight: 500; }
+.neg { color: var(--red); font-weight: 500; }
+.neu { color: var(--slate); }
+
+.badge { display: inline-block; padding: 2px 9px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+.badge-fav { background: var(--green-bg); color: var(--green); }
+.badge-unfav { background: var(--red-bg); color: var(--red); }
+.badge-neutral { background: var(--cream); color: var(--slate); }
+.badge-node { background: #eef2f8; color: var(--navy-mid); }
+
+.metric-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 22px; }
+.metric-card { background: var(--cream); border-radius: var(--radius); padding: 16px; border: 1px solid var(--border); }
+.metric-val { font-family: 'DM Serif Display', serif; font-size: 22px; color: var(--navy); }
+.metric-lbl { font-size: 11px; color: var(--slate-light); margin-top: 3px; text-transform: uppercase; letter-spacing: 0.05em; }
+
+.tags-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
+.tag { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 500; cursor: pointer; border: 1px solid var(--border-dark); color: var(--slate); background: var(--white); transition: all 0.15s; }
+.tag.on { background: var(--navy); color: var(--white); border-color: var(--navy); }
+
+.ai-box { background: #f1f5fb; border: 1px solid #c8d8ee; border-radius: var(--radius-lg); padding: 18px 20px; margin-bottom: 20px; }
+.ai-box-title { font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--navy-mid); margin-bottom: 8px; }
+.ai-box-text { font-size: 13px; color: var(--slate); line-height: 1.75; font-style: italic; }
+
+.chart-row { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 22px; }
+.chart-box { background: var(--cream); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 18px; }
+.chart-title { font-size: 12px; font-weight: 600; color: var(--navy); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.05em; }
+
+.settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.setting-card { background: var(--cream); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 20px; }
+.setting-card-title { font-size: 13px; font-weight: 600; color: var(--navy); margin-bottom: 14px; }
+.field-row { margin-bottom: 12px; }
+.field-row label { display: block; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--slate); margin-bottom: 5px; }
+.field-row input, .field-row select, .field-row textarea {
+  width: 100%; padding: 8px 12px; border: 1px solid var(--border-dark); border-radius: var(--radius); font-size: 13px; font-family: 'DM Sans', sans-serif; color: var(--navy); background: var(--white);
+}
+.field-row input:focus, .field-row select:focus { outline: none; border-color: var(--navy); }
+
+.toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); }
+.toggle-row:last-child { border-bottom: none; }
+.toggle-lbl { font-size: 13px; color: var(--navy); }
+.tog { width: 38px; height: 22px; border-radius: 11px; background: var(--border-dark); cursor: pointer; position: relative; transition: background 0.2s; flex-shrink: 0; }
+.tog.on { background: var(--navy); }
+.tog::after { content: ''; position: absolute; width: 16px; height: 16px; border-radius: 50%; background: white; top: 3px; left: 3px; transition: left 0.2s; }
+.tog.on::after { left: 19px; }
+
+.email-card { border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 18px; margin-bottom: 14px; transition: box-shadow 0.2s; }
+.email-card:hover { box-shadow: var(--shadow-sm); }
+.email-to { font-size: 12px; color: var(--slate); margin-bottom: 4px; }
+.email-subject { font-size: 14px; font-weight: 600; color: var(--navy); margin-bottom: 10px; }
+.email-body-box { background: var(--cream); border-radius: var(--radius); padding: 12px 14px; font-size: 12px; color: var(--slate); line-height: 1.7; white-space: pre-wrap; font-family: 'DM Sans', sans-serif; }
+.email-badges { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 10px; }
+.email-actions { display: flex; gap: 7px; margin-top: 12px; }
+
+.alert-banner { display: flex; align-items: center; gap: 10px; background: #fef9ec; border: 1px solid #f0d060; border-radius: var(--radius); padding: 10px 14px; font-size: 13px; color: #7a5c00; margin-bottom: 16px; }
+
+.mapping-row { display: flex; gap: 12px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+.mapping-row:last-child { border-bottom: none; }
+
+/* ─── PROFILE ─────────────────────────── */
+#profile { background: var(--white); }
+.profile-layout { display: grid; grid-template-columns: 300px 1fr; gap: 56px; align-items: start; }
+.profile-card { background: var(--navy); border-radius: var(--radius-lg); padding: 36px 28px; text-align: center; }
+.profile-avatar { width: 88px; height: 88px; border-radius: 50%; background: var(--gold); margin: 0 auto 18px; display: flex; align-items: center; justify-content: center; font-family: 'DM Serif Display', serif; font-size: 32px; color: var(--navy); }
+.profile-name { font-family: 'DM Serif Display', serif; font-size: 20px; color: var(--white); margin-bottom: 4px; }
+.profile-title { font-size: 12px; color: var(--gold); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 24px; }
+.profile-detail { font-size: 12px; color: rgba(255,255,255,0.55); margin-bottom: 6px; }
+.profile-divider { border: none; border-top: 1px solid rgba(255,255,255,0.1); margin: 20px 0; }
+.profile-skill-tag { display: inline-block; background: rgba(201,168,76,0.15); border: 1px solid rgba(201,168,76,0.25); color: var(--gold-light); font-size: 11px; padding: 4px 10px; border-radius: 20px; margin: 3px; }
+
+.profile-right h3 { font-family: 'DM Serif Display', serif; font-size: 22px; color: var(--navy); margin-bottom: 12px; }
+.profile-right p { font-size: 14px; color: var(--slate); line-height: 1.8; font-weight: 300; margin-bottom: 18px; }
+.exp-item { border-left: 2px solid var(--gold); padding-left: 18px; margin-bottom: 22px; }
+.exp-title { font-size: 14px; font-weight: 600; color: var(--navy); }
+.exp-co { font-size: 13px; color: var(--slate); margin-top: 2px; }
+.exp-period { font-size: 11px; color: var(--slate-light); margin-top: 2px; letter-spacing: 0.04em; }
+
+/* ─── FEEDBACK ────────────────────────── */
+#feedback { background: var(--cream); }
+.feedback-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
+.review-card { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 24px; position: relative; }
+.review-stars { color: var(--gold); font-size: 16px; margin-bottom: 10px; }
+.review-text { font-size: 14px; color: var(--slate); line-height: 1.75; font-style: italic; font-weight: 300; margin-bottom: 16px; }
+.review-author { display: flex; align-items: center; gap: 12px; }
+.review-avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--navy); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; color: var(--gold); }
+.review-name { font-size: 13px; font-weight: 600; color: var(--navy); }
+.review-role { font-size: 11px; color: var(--slate-light); }
+
+.feedback-form { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 28px; }
+.feedback-form h3 { font-family: 'DM Serif Display', serif; font-size: 20px; color: var(--navy); margin-bottom: 6px; }
+.feedback-form p { font-size: 13px; color: var(--slate); margin-bottom: 22px; }
+.star-select { display: flex; gap: 6px; margin-bottom: 16px; }
+.star-btn { font-size: 22px; cursor: pointer; color: var(--border-dark); transition: color 0.15s; background: none; border: none; padding: 0; }
+.star-btn.active { color: var(--gold); }
+textarea.feedback-ta { width: 100%; border: 1px solid var(--border-dark); border-radius: var(--radius); padding: 12px; font-size: 13px; font-family: 'DM Sans', sans-serif; color: var(--navy); resize: vertical; min-height: 100px; }
+.feedback-success { display: none; text-align: center; padding: 24px; }
+.feedback-success-icon { font-size: 36px; color: var(--green); margin-bottom: 10px; }
+
+/* ─── CONTACT ─────────────────────────── */
+#contact { background: var(--navy); }
+#contact .section-title { color: var(--white); }
+#contact .section-desc { color: rgba(255,255,255,0.55); }
+.contact-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; }
+.contact-info-item { display: flex; gap: 14px; align-items: flex-start; margin-bottom: 24px; }
+.contact-icon { width: 40px; height: 40px; border-radius: var(--radius); background: rgba(201,168,76,0.15); border: 1px solid rgba(201,168,76,0.25); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.contact-icon svg { width: 18px; height: 18px; fill: var(--gold); }
+.contact-info-title { font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--gold); margin-bottom: 4px; }
+.contact-info-val { font-size: 14px; color: rgba(255,255,255,0.75); }
+
+.contact-form { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: var(--radius-lg); padding: 28px; }
+.contact-form .field-row label { color: rgba(255,255,255,0.55); }
+.contact-form input, .contact-form select, .contact-form textarea {
+  background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.15); color: var(--white);
+}
+.contact-form input::placeholder, .contact-form textarea::placeholder { color: rgba(255,255,255,0.3); }
+.contact-form input:focus, .contact-form textarea:focus { border-color: var(--gold); outline: none; }
+.contact-success { display:none; text-align:center; padding:24px; color:var(--white); }
+
+/* ─── FOOTER ──────────────────────────── */
+footer { background: #080f1e; padding: 24px 40px; text-align: center; font-size: 12px; color: rgba(255,255,255,0.35); }
+footer span { color: var(--gold); }
+
+/* ─── ANIMATIONS ──────────────────────── */
+@keyframes fadeUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+.fade-up { animation: fadeUp 0.6s ease forwards; }
+.delay-1 { animation-delay: 0.1s; opacity:0; }
+.delay-2 { animation-delay: 0.22s; opacity:0; }
+.delay-3 { animation-delay: 0.34s; opacity:0; }
+.delay-4 { animation-delay: 0.46s; opacity:0; }
+
+@media (max-width: 800px) {
+  nav { padding: 0 20px; }
+  .nav-links { display: none; }
+  section { padding: 56px 20px; }
+  #home { padding: 90px 20px 50px; }
+  .features-grid { grid-template-columns: 1fr; }
+  .metric-row { grid-template-columns: repeat(2,1fr); }
+  .chart-row { grid-template-columns: 1fr; }
+  .profile-layout { grid-template-columns: 1fr; }
+  .feedback-grid { grid-template-columns: 1fr; }
+  .contact-layout { grid-template-columns: 1fr; }
+  .settings-grid { grid-template-columns: 1fr; }
+  .hero-stats { gap: 28px; flex-wrap: wrap; }
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">RKJ <span>·</span> MIS</div>
+  <div class="nav-links">
+    <a href="#home">Home</a>
+    <a href="#features">Features</a>
+    <a href="#tool">Tool</a>
+    <a href="#profile">About</a>
+    <a href="#feedback">Reviews</a>
+    <a href="#contact">Contact</a>
+  </div>
+  <a href="#tool" class="nav-cta">Launch Tool</a>
+</nav>
+
+<!-- HERO -->
+<section id="home">
+  <div class="hero-grid"></div>
+  <div class="hero-content">
+    <div class="hero-tag fade-up">Built by a Chartered Accountant</div>
+    <h1 class="hero-title fade-up delay-1">Intelligent MIS Reporting,<br><em>from Trial Balance to Inbox.</em></h1>
+    <p class="hero-sub fade-up delay-2">Upload your Trial Balance, generate a fully formatted MIS report with variance analysis, AI-powered commentary, and auto-drafted emails — in minutes, not hours.</p>
+    <div class="hero-btns fade-up delay-3">
+      <a href="#tool" class="btn-primary">Try the Tool</a>
+      <a href="#features" class="btn-outline">See how it works</a>
+    </div>
+    <div class="hero-stats fade-up delay-4">
+      <div>
+        <div class="hero-stat-val">MTD</div>
+        <div class="hero-stat-lbl">Month-to-date variance analysis</div>
+      </div>
+      <div>
+        <div class="hero-stat-val">YTD</div>
+        <div class="hero-stat-lbl">Year-to-date tracking</div>
+      </div>
+      <div>
+        <div class="hero-stat-val">AI</div>
+        <div class="hero-stat-lbl">Auto commentary & emails</div>
+      </div>
+      <div>
+        <div class="hero-stat-val">0</div>
+        <div class="hero-stat-lbl">Install required</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section id="features">
+  <div class="section-inner">
+    <div class="section-eyebrow">What it does</div>
+    <div class="section-title">Everything your finance close needs</div>
+    <div class="section-desc">Designed by a CA who has lived the monthly close grind — every feature exists to save real time.</div>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm4 18H6V4h7v5h5v11z"/></svg></div>
+        <div class="feature-title">Trial Balance Upload</div>
+        <div class="feature-desc">Upload CSV or Excel. Map your columns once and the tool handles everything — no reformatting needed each month.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon"><svg viewBox="0 0 24 24"><path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6h-6z"/></svg></div>
+        <div class="feature-title">MTD & YTD Variance Analysis</div>
+        <div class="feature-desc">Node-level and line-item variance vs. budget — favourable / unfavourable flagged in colour. Toggle columns on or off instantly.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/></svg></div>
+        <div class="feature-title">AI Variance Commentary</div>
+        <div class="feature-desc">One click generates a professional narrative summary of key variances — ready to paste into board packs or management decks.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon"><svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg></div>
+        <div class="feature-title">Auto Email Drafting</div>
+        <div class="feature-desc">Emails to variance owners are drafted automatically, with MTD and YTD figures pre-filled. Send at the click of a button.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon"><svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 4l5 2.18V11c0 3.5-2.33 6.79-5 7.93-2.67-1.14-5-4.43-5-7.93V7.18L12 5z"/></svg></div>
+        <div class="feature-title">Threshold-Based Triggers</div>
+        <div class="feature-desc">Set email triggers by variance %, absolute amount, or MIS node. Only material variances generate alerts — no noise.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon"><svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 3c1.93 0 3.5 1.57 3.5 3.5S13.93 13 12 13s-3.5-1.57-3.5-3.5S10.07 6 12 6zm7 13H5v-.23c0-.62.28-1.2.76-1.58C7.47 15.82 9.64 15 12 15s4.53.82 6.24 2.19c.48.38.76.97.76 1.58V19z"/></svg></div>
+        <div class="feature-title">Contact-Linked TB</div>
+        <div class="feature-desc">Map each GL line to an owner in your Trial Balance. The tool knows who to chase for every variance — automatically.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TOOL -->
+<section id="tool">
+  <div class="section-inner">
+    <div class="section-eyebrow">Live Tool</div>
+    <div class="section-title">MIS Report Generator</div>
+    <div class="section-desc">Fully functional — load the sample data or upload your own Trial Balance to get started.</div>
+
+    <div class="tool-shell">
+      <div class="tool-topbar">
+        <div class="tool-topbar-title">MIS Report Generator <span>·</span> <span style="font-size:13px;font-family:'DM Sans',sans-serif;color:rgba(255,255,255,0.5);" id="t-period">Feb 2025</span></div>
+        <div style="display:flex;gap:8px;">
+          <button class="tbtn" onclick="downloadTemplate()">↓ Template</button><button class="tbtn" onclick="exportExcel()">Export Excel</button><button class="tbtn" onclick="exportPDF()">Export PDF</button>
+          <button class="tbtn-gold tbtn" onclick="generateReport()">Generate Report</button>
+        </div>
+      </div>
+
+      <div class="tool-tabs">
+        <div class="tool-tab active" onclick="switchTab('data')">Data Input</div>
+        <div class="tool-tab" onclick="switchTab('report')">MIS Report</div>
+        <div class="tool-tab" onclick="switchTab('charts')">Charts</div>
+        <div class="tool-tab" onclick="switchTab('emails')">Email Drafts</div>
+        <div class="tool-tab" onclick="switchTab('settings')">Settings</div>
+      </div>
+
+      <!-- DATA -->
+      <div id="tp-data" class="tool-panel active">
+        <div class="lbl">Upload Trial Balance</div>
+        <div class="upload-zone" onclick="document.getElementById('tb-file').click()">
+          <input type="file" id="tb-file" accept=".xlsx,.xls,.csv" onchange="handleUpload(event)">
+          <div class="upload-icon-wrap"><svg viewBox="0 0 24 24"><path d="M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z"/></svg></div>
+          <div class="upload-title">Click to upload Trial Balance</div>
+          <div class="upload-sub">Excel (.xlsx) or CSV — 8 columns: Account, Node, MTD Actual, MTD Budget, YTD Actual, YTD Budget, Contact Email, Contact Name</div>
+        </div>
+        <div class="action-row">
+          <button class="tbtn tbtn-navy" onclick="loadSample()">Load sample data</button>
+          <button class="tbtn" onclick="downloadTemplate()">↓ Download template</button>
+          <button class="tbtn" onclick="toggleMapper()">Column mapper</button>
+        </div>
+        <div id="mapper" style="display:none;margin-top:16px;">
+          <div class="setting-card">
+            <div class="setting-card-title">Map your columns</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+              <div class="field-row"><label>Account</label><select id="cm-acc"><option>Account</option><option>Description</option><option>GL Code</option></select></div>
+              <div class="field-row"><label>Node / Category</label><select id="cm-node"><option>Node</option><option>Category</option><option>Section</option></select></div>
+              <div class="field-row"><label>MTD Actual</label><select id="cm-ma"><option>MTD Actual</option><option>Current Month</option></select></div>
+              <div class="field-row"><label>MTD Budget</label><select id="cm-mb"><option>MTD Budget</option><option>Budget MTD</option></select></div>
+              <div class="field-row"><label>YTD Actual</label><select id="cm-ya"><option>YTD Actual</option></select></div>
+              <div class="field-row"><label>YTD Budget</label><select id="cm-yb"><option>YTD Budget</option></select></div>
+              <div class="field-row"><label>Contact Email</label><select id="cm-ce"><option>Contact Email</option><option>Owner Email</option></select></div>
+              <div class="field-row"><label>Contact Name</label><select id="cm-cn"><option>Contact Name</option><option>Owner</option></select></div>
+            </div>
+            <button class="tbtn tbtn-navy" onclick="document.getElementById('mapper').style.display='none'" style="margin-top:12px;">Apply</button>
+          </div>
+        </div>
+        <div id="data-preview" style="display:none;margin-top:20px;">
+          <div class="lbl"><span id="row-count">0</span> line items loaded</div>
+          <div class="data-wrap">
+            <table><thead><tr><th>Account</th><th>Node</th><th>MTD Actual</th><th>MTD Budget</th><th>MTD Var</th><th>MTD Var%</th><th>YTD Actual</th><th>YTD Budget</th><th>YTD Var</th><th>Contact</th></tr></thead>
+            <tbody id="preview-body"></tbody></table>
+          </div>
+        </div>
+      </div>
+
+      <!-- REPORT -->
+      <div id="tp-report" class="tool-panel">
+        <div class="metric-row" id="metric-row">
+          <div class="metric-card"><div class="metric-val" id="m-rev">—</div><div class="metric-lbl">Revenue MTD</div></div>
+          <div class="metric-card"><div class="metric-val" id="m-opex">—</div><div class="metric-lbl">OpEx MTD</div></div>
+          <div class="metric-card"><div class="metric-val" id="m-pbt">—</div><div class="metric-lbl">PBT MTD</div></div>
+          <div class="metric-card"><div class="metric-val" id="m-var">—</div><div class="metric-lbl">Overall Variance</div></div>
+        </div>
+        <div id="ai-box" class="ai-box" style="display:none;">
+          <div class="ai-box-title">AI Commentary</div>
+          <div class="ai-box-text" id="ai-text"></div>
+        </div>
+        <div class="tags-row" id="col-tags">
+          <div class="tag on" data-col="mtd" onclick="togCol(this,'mtd')">MTD</div>
+          <div class="tag on" data-col="ytd" onclick="togCol(this,'ytd')">YTD</div>
+          <div class="tag on" data-col="var" onclick="togCol(this,'var')">Variance ₹</div>
+          <div class="tag on" data-col="pct" onclick="togCol(this,'pct')">Variance %</div>
+          <div class="tag" data-col="contact" onclick="togCol(this,'contact')">Contact</div>
+        </div>
+        <div class="action-row" style="margin-bottom:16px;">
+          <button class="tbtn tbtn-gold" onclick="generateAI()">✦ AI Commentary</button>
+        </div>
+        <div class="data-wrap" id="mis-wrap"><div style="padding:48px;text-align:center;color:var(--slate-light);font-size:14px;">Load data and click Generate Report</div></div>
+      </div>
+
+      <!-- CHARTS -->
+      <div id="tp-charts" class="tool-panel">
+        <div class="chart-row">
+          <div class="chart-box"><div class="chart-title">MTD Variance by Node</div><canvas id="chart-node" height="180"></canvas></div>
+          <div class="chart-box"><div class="chart-title">Actual vs Budget — MTD</div><canvas id="chart-avb" height="180"></canvas></div>
+        </div>
+        <div class="chart-row">
+          <div class="chart-box"><div class="chart-title">YTD Trend — Actual vs Budget</div><canvas id="chart-ytd" height="180"></canvas></div>
+          <div class="chart-box"><div class="chart-title">Waterfall — MTD PBT Bridge</div><canvas id="chart-wf" height="180"></canvas></div>
+        </div>
+        <div style="text-align:center;margin-top:8px;"><button class="tbtn tbtn-navy" onclick="renderCharts()">Refresh Charts</button></div>
+      </div>
+
+      <!-- EMAILS -->
+      <div id="tp-emails" class="tool-panel">
+        <div id="email-banner" class="alert-banner" style="display:none;">⚠ <span id="email-banner-text"></span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+          <div class="lbl"><span id="email-count">0</span> emails queued</div>
+          <div style="display:flex;gap:6px;">
+            <button class="tbtn tbtn-green" onclick="sendAll()">Send All</button>
+            <button class="tbtn" onclick="generateEmails()">Refresh</button>
+          </div>
+        </div>
+        <div id="email-list"><div style="padding:40px;text-align:center;color:var(--slate-light);font-size:14px;">Generate report to auto-draft emails for threshold-breaching variances</div></div>
+      </div>
+
+      <!-- SETTINGS -->
+      <div id="tp-settings" class="tool-panel">
+        <div class="settings-grid">
+          <div class="setting-card">
+            <div class="setting-card-title">Email threshold</div>
+            <div class="field-row"><label>Trigger by</label><select id="s-ttype" onchange="updateThresh()"><option value="pct">Variance %</option><option value="amt">Amount (₹)</option><option value="node">MIS Node</option></select></div>
+            <div class="field-row" id="s-tval-row"><label>Threshold value</label><div style="display:flex;gap:8px;align-items:center;"><input type="number" id="s-tval" value="10" min="0"><span id="s-tunit" style="font-size:13px;color:var(--slate);">%</span></div></div>
+            <div class="field-row"><label>Direction</label><select id="s-tdir"><option value="both">Both sides</option><option value="unfav">Unfavourable only</option><option value="fav">Favourable only</option></select></div>
+          </div>
+          <div class="setting-card">
+            <div class="setting-card-title">Columns &amp; display</div>
+            <div class="toggle-row"><span class="toggle-lbl">Show MTD</span><div class="tog on" onclick="this.classList.toggle('on')"></div></div>
+            <div class="toggle-row"><span class="toggle-lbl">Show YTD</span><div class="tog on" onclick="this.classList.toggle('on')"></div></div>
+            <div class="toggle-row"><span class="toggle-lbl">Variance amount</span><div class="tog on" onclick="this.classList.toggle('on')"></div></div>
+            <div class="toggle-row"><span class="toggle-lbl">Variance %</span><div class="tog on" onclick="this.classList.toggle('on')"></div></div>
+            <div class="toggle-row"><span class="toggle-lbl">Prior year</span><div class="tog" onclick="this.classList.toggle('on')"></div></div>
+            <div class="toggle-row"><span class="toggle-lbl">Forecast</span><div class="tog" onclick="this.classList.toggle('on')"></div></div>
+          </div>
+          <div class="setting-card">
+            <div class="setting-card-title">Email template</div>
+            <div class="field-row"><label>Sender name</label><input type="text" id="s-sender" value="Finance Team — Rahul Kumar Jha"></div>
+            <div class="field-row"><label>Subject prefix</label><input type="text" id="s-subject" value="[MIS] Variance Commentary Required"></div>
+            <div class="field-row"><label>Reply deadline (days)</label><input type="number" id="s-days" value="2"></div>
+          </div>
+          <div class="setting-card">
+            <div class="setting-card-title">Report settings</div>
+            <div class="field-row"><label>Currency</label><select id="s-cur"><option value="₹">INR (₹)</option><option value="$">USD ($)</option><option value="£">GBP (£)</option></select></div>
+            <div class="field-row"><label>Scale</label><select id="s-scale"><option value="1">Actuals</option><option value="1000" selected>Thousands</option><option value="100000">Lakhs</option><option value="10000000">Crores</option></select></div>
+            <div class="field-row"><label>Period</label><input type="month" id="s-period" value="2025-02" onchange="document.getElementById('t-period').textContent=this.value"></div>
+            <div class="field-row"><label>Company</label><input type="text" id="s-company" value="Acme Corp Ltd"></div>
+          </div>
+        </div>
+        <div class="setting-card" style="margin-top:18px;">
+          <div class="setting-card-title">Contact mappings</div>
+          <div id="contact-map"><div style="font-size:13px;color:var(--slate-light);">Load data to view mappings</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PROFILE -->
+<section id="profile">
+  <div class="section-inner">
+    <div class="section-eyebrow">About the Builder</div>
+    <div class="section-title">Rahul Kumar Jha</div>
+    <div class="profile-layout">
+      <div>
+        <div class="profile-card">
+          <div class="profile-avatar">RKJ</div>
+          <div class="profile-name">Rahul Kumar Jha</div>
+          <div class="profile-title">Chartered Accountant</div>
+          <div class="profile-detail">📍 Jharkhand, India — 814133</div>
+          <div class="profile-detail">📞 +91-7903185400</div>
+          <div class="profile-detail">🎓 ICAI CA | B.Com (Hons.) Calcutta University</div>
+          <hr class="profile-divider">
+          <div style="margin-bottom:8px;font-size:11px;color:rgba(255,255,255,0.4);letter-spacing:0.06em;text-transform:uppercase;">Core skills</div>
+          <div>
+            <span class="profile-skill-tag">FP&A</span>
+            <span class="profile-skill-tag">MIS Reporting</span>
+            <span class="profile-skill-tag">Variance Analysis</span>
+            <span class="profile-skill-tag">Group Consolidation</span>
+            <span class="profile-skill-tag">Month-End Close</span>
+            <span class="profile-skill-tag">US-GAAP / IFRS / Ind AS</span>
+            <span class="profile-skill-tag">Fixed Assets & Leases</span>
+            <span class="profile-skill-tag">SAP · Oracle · Tally</span>
+            <span class="profile-skill-tag">Power BI</span>
+            <span class="profile-skill-tag">Advanced Excel</span>
+            <span class="profile-skill-tag">Internal Controls</span>
+            <span class="profile-skill-tag">Team Leadership</span>
+            <span class="profile-skill-tag">Statutory Audit</span>
+            <span class="profile-skill-tag">Process Automation</span>
+          </div>
+        </div>
+      </div>
+      <div class="profile-right">
+        <h3>4 years of progressive finance experience across Goldman Sachs, Jumbo Electronics & Singhi & Co.</h3>
+        <p>Chartered Accountant with a proven track record in financial reporting, group consolidation, month-end/year-end close, multi-entity reconciliations, variance analysis, and management reporting across global and multi-jurisdiction environments. Experienced in US-GAAP, IFRS, and Ind AS aligned accounting, process automation (SAP / Power BI), audit coordination, and cross-functional stakeholder partnering.</p>
+        <p>I built this MIS tool to solve a problem I lived daily at Goldman Sachs — the monthly close grind of manually compiling Trial Balances, chasing variance commentary across teams, and formatting MIS decks under deadline. Open to relocation and hybrid roles.</p>
+
+        <div style="margin-top:28px;">
+          <div style="font-size:12px;font-weight:600;letter-spacing:0.07em;text-transform:uppercase;color:var(--slate-light);margin-bottom:18px;">Professional experience</div>
+
+          <div class="exp-item">
+            <div class="exp-title">Assistant Manager – Finance</div>
+            <div class="exp-co">Jumbo Electronics Co. Ltd. · Dubai, UAE</div>
+            <div class="exp-period">Jun 2025 – Jul 2025</div>
+            <div style="font-size:12px;color:var(--slate);margin-top:5px;line-height:1.65;">Managed a team of 8 analysts; oversaw financial operations, reporting accuracy and governance across group entities. Maintained Fixed Assets and Lease registers; coordinated month-end close and IFRS compliance.</div>
+          </div>
+
+          <div class="exp-item">
+            <div class="exp-title">Associate – Finance</div>
+            <div class="exp-co">Goldman Sachs · Hyderabad, India</div>
+            <div class="exp-period">Jan 2025 – Jun 2025</div>
+            <div style="font-size:12px;color:var(--slate);margin-top:5px;line-height:1.65;">Led monthly close including journal entries, GL reconciliations, accruals, FX hedging and book closures for global entities. Prepared MIS reports with detailed variance analysis (expenses, income, chargebacks) for senior leadership. Drove automation for lease/fixed assets reporting. Maintained Fixed Assets and Lease registers; prepared ASC 842 / IFRS 16 disclosures.</div>
+          </div>
+
+          <div class="exp-item">
+            <div class="exp-title">Senior Analyst – Finance</div>
+            <div class="exp-co">Goldman Sachs · Hyderabad, India</div>
+            <div class="exp-period">Apr 2022 – Dec 2024</div>
+            <div style="font-size:12px;color:var(--slate);margin-top:5px;line-height:1.65;">Promoted to Associate for outstanding performance. Executed sub-ledger close, reconciliations and variance analysis for global leases and fixed assets under US-GAAP and IFRS. Developed quarterly financial presentations for senior management. Supported group audits, regulatory reporting and compliance; mentored junior analysts.</div>
+          </div>
+
+          <div class="exp-item">
+            <div class="exp-title">Audit Assistant</div>
+            <div class="exp-co">Singhi & Co. · Kolkata, India</div>
+            <div class="exp-period">Apr 2018 – Apr 2021</div>
+            <div style="font-size:12px;color:var(--slate);margin-top:5px;line-height:1.65;">Reviewed consolidated and standalone financial statements for listed companies under Indian GAAP / Ind AS. Conducted statutory and tax audits (Sec. 44AB); performed Y-o-Y / Q-o-Q variance analysis and cost optimisation reviews.</div>
+          </div>
+
+          <div style="margin-top:22px;">
+            <div style="font-size:12px;font-weight:600;letter-spacing:0.07em;text-transform:uppercase;color:var(--slate-light);margin-bottom:12px;">Leadership & extracurriculars</div>
+            <div style="font-size:13px;color:var(--slate);line-height:1.75;">
+              Ex-President &amp; Ex-VP Education — Toastmasters International, Walk the Talk Hyderabad Club<br>
+              Presided over Social Committee, Controllers Division
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEEDBACK -->
+<section id="feedback">
+  <div class="section-inner">
+    <div class="section-eyebrow">Reviews & Remarks</div>
+    <div class="section-title">Share your feedback</div>
+    <div class="section-desc">Tried the tool? I'd love to hear what you think — whether you're a recruiter, a finance professional, or just exploring. Your remarks help improve the product.</div>
+    <div style="max-width:640px;">
+      <div class="feedback-form" style="border:1px solid var(--border);border-radius:var(--radius-lg);padding:32px;background:var(--white);">
+        <div class="field-row"><label>Your name</label><input type="text" id="fb-name" placeholder="Name"></div>
+        <div class="field-row"><label>Your role</label><input type="text" id="fb-role" placeholder="e.g. Finance Manager, CFO, Recruiter"></div>
+        <div class="field-row"><label>Organisation</label><input type="text" id="fb-org" placeholder="Company / Organisation (optional)"></div>
+        <div class="field-row"><label>Rating</label>
+          <div class="star-select" id="star-row">
+            <button class="star-btn" onclick="setStars(1)">★</button>
+            <button class="star-btn" onclick="setStars(2)">★</button>
+            <button class="star-btn" onclick="setStars(3)">★</button>
+            <button class="star-btn" onclick="setStars(4)">★</button>
+            <button class="star-btn" onclick="setStars(5)">★</button>
+          </div>
+        </div>
+        <div class="field-row"><label>Remark</label><textarea class="feedback-ta" id="fb-text" placeholder="Share your experience with the tool, suggestions, or any feedback for Rahul..."></textarea></div>
+        <button class="tbtn-gold tbtn" onclick="submitFeedback()" style="margin-top:4px;width:100%;">Submit Remark</button>
+        <div class="feedback-success" id="fb-success">
+          <div class="feedback-success-icon">✓</div>
+          <div style="font-size:15px;font-weight:600;color:var(--navy);margin-bottom:4px;">Thank you!</div>
+          <div style="font-size:13px;color:var(--slate);">Your feedback has been noted.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CONTACT -->
+<section id="contact">
+  <div class="section-inner">
+    <div class="section-eyebrow" style="color:var(--gold);">Get in touch</div>
+    <div class="section-title">Let's connect</div>
+    <div class="section-desc">Open to FP&A, finance leadership, and consulting opportunities. Reach out to discuss how this tool — or my broader skill set — can add value to your organisation.</div>
+    <div class="contact-layout">
+      <div>
+        <div class="contact-info-item">
+          <div class="contact-icon"><svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg></div>
+          <div><div class="contact-info-title">Email</div><div class="contact-info-val"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="10627178657c7b657d71627a78713e2127222950777d71797c3e737f7d">[email&#160;protected]</a></div></div>
+        </div>
+        <div class="contact-info-item">
+          <div class="contact-icon"><svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 3c1.93 0 3.5 1.57 3.5 3.5S13.93 13 12 13s-3.5-1.57-3.5-3.5S10.07 6 12 6zm7 13H5v-.23c0-.62.28-1.2.76-1.58C7.47 15.82 9.64 15 12 15s4.53.82 6.24 2.19c.48.38.76.97.76 1.58V19z"/></svg></div>
+          <div><div class="contact-info-title">LinkedIn</div><div class="contact-info-val">linkedin.com/in/rahul-kumar-jha-66a935231</div></div>
+        </div>
+        <div class="contact-info-item">
+          <div class="contact-icon"><svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg></div>
+          <div><div class="contact-info-title">Location</div><div class="contact-info-val">Jharkhand, India — open to relocation & hybrid</div></div>
+        </div>
+        <div style="margin-top:32px;padding:20px;background:rgba(201,168,76,0.1);border:1px solid rgba(201,168,76,0.2);border-radius:var(--radius-lg);">
+          <div style="font-size:12px;color:var(--gold);font-weight:600;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:8px;">Open to</div>
+          <div style="font-size:14px;color:rgba(255,255,255,0.7);line-height:1.8;">Finance Manager · FP&A · MIS &amp; Reporting · Group Consolidation · Financial Controller · Finance Transformation</div>
+        </div>
+      </div>
+      <div class="contact-form">
+        <div class="field-row"><label>Your name</label><input type="text" id="c-name" placeholder="Name"></div>
+        <div class="field-row"><label>Organisation</label><input type="text" id="c-org" placeholder="Company / Organisation"></div>
+        <div class="field-row"><label>Subject</label><select id="c-subject"><option>Job Opportunity</option><option>Consulting Enquiry</option><option>Tool Feedback</option><option>General</option></select></div>
+        <div class="field-row"><label>Message</label><textarea placeholder="Your message..." style="width:100%;padding:10px 12px;border:1px solid rgba(255,255,255,0.15);border-radius:var(--radius);background:rgba(255,255,255,0.08);color:white;font-size:13px;font-family:'DM Sans',sans-serif;resize:vertical;min-height:110px;" id="c-msg"></textarea></div>
+        <button class="tbtn-gold tbtn" onclick="submitContact()" style="width:100%;margin-top:4px;">Send Message</button>
+        <div id="c-success" class="contact-success"><div style="font-size:24px;color:var(--gold);margin-bottom:8px;">✓</div><div>Message sent — I'll be in touch shortly.</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div>Built by <span>Rahul Kumar Jha, CA</span> · MIS Report Generator · <span>2025</span></div>
+</footer>
+
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+// ─── STATE ───────────────────────────────────────────────────────
+let appData = [];
+let cols = { mtd: true, ytd: true, var: true, pct: true, contact: false };
+let starRating = 0;
+let chartInstances = {};
+
+// ─── HELPERS ─────────────────────────────────────────────────────
+function cur() { return document.getElementById('s-cur')?.value || '₹'; }
+function scale() { return parseInt(document.getElementById('s-scale')?.value || '1000'); }
+function fmt(n) {
+  const s = scale(), c = cur();
+  return c + (n/s).toLocaleString('en-IN', {minimumFractionDigits:1, maximumFractionDigits:1});
+}
+function fmtP(n) { return (n>=0?'+':'')+n.toFixed(1)+'%'; }
+function varCls(n) { return n>0?'pos':n<0?'neg':'neu'; }
+
+// ─── TAB SWITCHING ────────────────────────────────────────────────
+function switchTab(id) {
+  document.querySelectorAll('.tool-tab').forEach((t,i)=>{
+    const ids=['data','report','charts','emails','settings'];
+    t.classList.toggle('active', ids[i]===id);
+  });
+  document.querySelectorAll('.tool-panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('tp-'+id).classList.add('active');
+  if(id==='charts' && appData.length) setTimeout(renderCharts,100);
+}
+
+function toggleMapper() {
+  const m=document.getElementById('mapper');
+  m.style.display=m.style.display==='none'?'block':'none';
+}
+
+function updateThresh() {
+  const t=document.getElementById('s-ttype').value;
+  document.getElementById('s-tval-row').style.display=t==='node'?'none':'block';
+  document.getElementById('s-tunit').textContent=t==='pct'?'%':t==='amt'?'₹':'';
+}
+
+// ─── SAMPLE DATA ──────────────────────────────────────────────────
+function loadSample() {
+  appData = [
+    {a:'Product Sales',node:'Revenue',ma:4850000,mb:5000000,ya:29100000,yb:30000000,ce:'sales@acme.com',cn:'Rajesh Kumar'},
+    {a:'Service Revenue',node:'Revenue',ma:1200000,mb:1000000,ya:7200000,yb:6000000,ce:'sales@acme.com',cn:'Rajesh Kumar'},
+    {a:'Other Income',node:'Revenue',ma:80000,mb:100000,ya:480000,yb:600000,ce:'finance@acme.com',cn:'Priya Sharma'},
+    {a:'Raw Material',node:'Direct Costs',ma:2100000,mb:2000000,ya:12600000,yb:12000000,ce:'ops@acme.com',cn:'Anil Mehta'},
+    {a:'Direct Labour',node:'Direct Costs',ma:980000,mb:900000,ya:5880000,yb:5400000,ce:'hr@acme.com',cn:'Sunita Rao'},
+    {a:'Subcontracting',node:'Direct Costs',ma:350000,mb:400000,ya:2100000,yb:2400000,ce:'ops@acme.com',cn:'Anil Mehta'},
+    {a:'Salaries',node:'Overheads',ma:600000,mb:600000,ya:3600000,yb:3600000,ce:'hr@acme.com',cn:'Sunita Rao'},
+    {a:'Rent & Utilities',node:'Overheads',ma:210000,mb:200000,ya:1260000,yb:1200000,ce:'admin@acme.com',cn:'Deepak Joshi'},
+    {a:'Marketing',node:'Overheads',ma:150000,mb:250000,ya:900000,yb:1500000,ce:'mktg@acme.com',cn:'Neha Gupta'},
+    {a:'IT & Tech',node:'Overheads',ma:95000,mb:80000,ya:570000,yb:480000,ce:'it@acme.com',cn:'Vikram Singh'},
+    {a:'Interest Expense',node:'Finance Costs',ma:180000,mb:150000,ya:1080000,yb:900000,ce:'finance@acme.com',cn:'Priya Sharma'},
+    {a:'Bank Charges',node:'Finance Costs',ma:12000,mb:10000,ya:72000,yb:60000,ce:'finance@acme.com',cn:'Priya Sharma'},
+    {a:'Income Tax',node:'Tax',ma:220000,mb:200000,ya:1320000,yb:1200000,ce:'finance@acme.com',cn:'Priya Sharma'},
+  ];
+  renderPreview();
+  renderContactMap();
+}
+
+function handleUpload(e) {
+  const f=e.target.files[0]; if(!f) return;
+  const ext=f.name.split('.').pop().toLowerCase();
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    try {
+      let rows=[];
+      if(ext==='csv') {
+        const lines=ev.target.result.trim().split('\n');
+        rows=lines.map(l=>l.split(',').map(x=>x.trim().replace(/"/g,'')));
+      } else {
+        const wb=XLSX.read(ev.target.result,{type:'array'});
+        const ws=wb.Sheets[wb.SheetNames[0]];
+        rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+        rows=rows.filter(r=>r.some(c=>c!==''));
+      }
+      if(!rows.length){alert('File appears empty.');return;}
+      const h=rows[0].map(x=>String(x).trim());
+      const find=(names)=>{
+        for(const n of names){const i=h.findIndex(x=>x.toLowerCase()===n.toLowerCase());if(i>=0)return i;}
+        return -1;
+      };
+      const iA=find(['Account','GL Account','Description','Account Name']);
+      const iN=find(['Node','Category','Section','Group','Type']);
+      const iMA=find(['MTD Actual','Actual MTD','Current Month','MTD Act']);
+      const iMB=find(['MTD Budget','Budget MTD','MTD Bud']);
+      const iYA=find(['YTD Actual','Actual YTD','YTD Act']);
+      const iYB=find(['YTD Budget','Budget YTD','YTD Bud']);
+      const iCE=find(['Contact Email','Email','Owner Email','Responsible Email']);
+      const iCN=find(['Contact Name','Owner','Responsible','Owner Name']);
+      const missing=[];
+      if(iA<0)missing.push('Account');
+      if(iMA<0)missing.push('MTD Actual');
+      if(iMB<0)missing.push('MTD Budget');
+      if(missing.length){
+        alert('Could not find columns: '+missing.join(', ')+'\n\nPlease use the Download Template to see the expected format, or use the Column Mapper to match your columns.');
+        return;
+      }
+      appData=rows.slice(1).map(r=>{
+        const g=(i)=>i>=0?r[i]:'';
+        return {
+          a:String(g(iA)).trim(),
+          node:String(g(iN)||'Other').trim(),
+          ma:parseFloat(g(iMA))||0,
+          mb:parseFloat(g(iMB))||0,
+          ya:parseFloat(g(iYA))||0,
+          yb:parseFloat(g(iYB))||0,
+          ce:String(g(iCE)).trim(),
+          cn:String(g(iCN)).trim()
+        };
+      }).filter(r=>r.a&&r.a!=='undefined');
+      renderPreview(); renderContactMap();
+      document.getElementById('data-preview').scrollIntoView({behavior:'smooth'});
+    } catch(err){
+      alert('Error reading file: '+err.message+'\n\nPlease download the template to see the expected format.');
+    }
+  };
+  if(ext==='csv') reader.readAsText(f);
+  else reader.readAsArrayBuffer(f);
+}
+
+function renderPreview() {
+  document.getElementById('data-preview').style.display='block';
+  document.getElementById('row-count').textContent=appData.length;
+  document.getElementById('preview-body').innerHTML=appData.map(r=>{
+    const mv=r.ma-r.mb, yv=r.ya-r.yb;
+    const mp=r.mb?(mv/r.mb*100):0, yp=r.yb?(yv/r.yb*100):0;
+    return `<tr><td>${r.a}</td><td><span class="badge badge-node">${r.node}</span></td>
+      <td>${fmt(r.ma)}</td><td>${fmt(r.mb)}</td>
+      <td class="${varCls(mv)}">${fmt(mv)}</td>
+      <td class="${varCls(mp)}">${fmtP(mp)}</td>
+      <td>${fmt(r.ya)}</td><td>${fmt(r.yb)}</td>
+      <td class="${varCls(yv)}">${fmt(yv)}</td>
+      <td style="font-size:11px;color:var(--slate-light);">${r.cn}</td></tr>`;
+  }).join('');
+}
+
+// ─── GENERATE REPORT ─────────────────────────────────────────────
+function generateReport() {
+  if(!appData.length){loadSample();}
+  updateMetrics();
+  renderMIS();
+  generateEmails();
+  switchTab('report');
+}
+
+function updateMetrics() {
+  const rev=appData.filter(r=>r.node==='Revenue');
+  const nonRev=appData.filter(r=>r.node!=='Revenue'&&r.node!=='Tax');
+  const totalRevA=rev.reduce((s,r)=>s+r.ma,0);
+  const totalRevB=rev.reduce((s,r)=>s+r.mb,0);
+  const totalOpex=nonRev.reduce((s,r)=>s+r.ma,0);
+  const pbt=totalRevA-totalOpex;
+  const vp=totalRevB?(totalRevA-totalRevB)/totalRevB*100:0;
+  document.getElementById('m-rev').textContent=fmt(totalRevA);
+  document.getElementById('m-opex').textContent=fmt(totalOpex);
+  document.getElementById('m-pbt').textContent=fmt(pbt);
+  const mvar=document.getElementById('m-var');
+  mvar.textContent=fmtP(vp);
+  mvar.className='metric-val '+(vp>=0?'pos':'neg');
+}
+
+function togCol(el,c) { cols[c]=!cols[c]; el.classList.toggle('on',cols[c]); renderMIS(); }
+
+function renderMIS() {
+  if(!appData.length) return;
+  const nodes=[...new Set(appData.map(r=>r.node))];
+  let thead='<tr><th style="min-width:180px;">Account</th>';
+  if(cols.mtd){thead+='<th>MTD Actual</th><th>MTD Budget</th>';}
+  if(cols.var&&cols.mtd){thead+='<th>MTD Var</th>';}
+  if(cols.pct&&cols.mtd){thead+='<th>MTD Var%</th>';}
+  if(cols.ytd){thead+='<th>YTD Actual</th><th>YTD Budget</th>';}
+  if(cols.var&&cols.ytd){thead+='<th>YTD Var</th>';}
+  if(cols.pct&&cols.ytd){thead+='<th>YTD Var%</th>';}
+  if(cols.contact){thead+='<th>Contact</th>';}
+  thead+='</tr>';
+
+  let tbody='';
+  nodes.forEach(node=>{
+    const items=appData.filter(r=>r.node===node);
+    const tma=items.reduce((s,r)=>s+r.ma,0),tmb=items.reduce((s,r)=>s+r.mb,0);
+    const tya=items.reduce((s,r)=>s+r.ya,0),tyb=items.reduce((s,r)=>s+r.yb,0);
+    const mv=tma-tmb,yv=tya-tyb,mp=tmb?mv/tmb*100:0,yp=tyb?yv/tyb*100:0;
+    tbody+=`<tr class="node-header"><td>${node}</td>`;
+    if(cols.mtd){tbody+=`<td>${fmt(tma)}</td><td>${fmt(tmb)}</td>`;}
+    if(cols.var&&cols.mtd){tbody+=`<td class="${varCls(mv)}">${fmt(mv)}</td>`;}
+    if(cols.pct&&cols.mtd){tbody+=`<td class="${varCls(mp)}">${fmtP(mp)}</td>`;}
+    if(cols.ytd){tbody+=`<td>${fmt(tya)}</td><td>${fmt(tyb)}</td>`;}
+    if(cols.var&&cols.ytd){tbody+=`<td class="${varCls(yv)}">${fmt(yv)}</td>`;}
+    if(cols.pct&&cols.ytd){tbody+=`<td class="${varCls(yp)}">${fmtP(yp)}</td>`;}
+    if(cols.contact){tbody+='<td></td>';}
+    tbody+='</tr>';
+    items.forEach(r=>{
+      const mv2=r.ma-r.mb,yv2=r.ya-r.yb,mp2=r.mb?mv2/r.mb*100:0,yp2=r.yb?yv2/r.yb*100:0;
+      tbody+=`<tr><td style="padding-left:24px;font-size:12px;color:var(--slate);">${r.a}</td>`;
+      if(cols.mtd){tbody+=`<td style="font-size:12px;">${fmt(r.ma)}</td><td style="font-size:12px;">${fmt(r.mb)}</td>`;}
+      if(cols.var&&cols.mtd){tbody+=`<td style="font-size:12px;" class="${varCls(mv2)}">${fmt(mv2)}</td>`;}
+      if(cols.pct&&cols.mtd){tbody+=`<td style="font-size:12px;" class="${varCls(mp2)}">${fmtP(mp2)}</td>`;}
+      if(cols.ytd){tbody+=`<td style="font-size:12px;">${fmt(r.ya)}</td><td style="font-size:12px;">${fmt(r.yb)}</td>`;}
+      if(cols.var&&cols.ytd){tbody+=`<td style="font-size:12px;" class="${varCls(yv2)}">${fmt(yv2)}</td>`;}
+      if(cols.pct&&cols.ytd){tbody+=`<td style="font-size:12px;" class="${varCls(yp2)}">${fmtP(yp2)}</td>`;}
+      if(cols.contact){tbody+=`<td style="font-size:11px;color:var(--slate-light);">${r.cn}</td>`;}
+      tbody+='</tr>';
+    });
+  });
+
+  const gma=appData.reduce((s,r)=>s+r.ma,0),gmb=appData.reduce((s,r)=>s+r.mb,0);
+  const gya=appData.reduce((s,r)=>s+r.ya,0),gyb=appData.reduce((s,r)=>s+r.yb,0);
+  const gmv=gma-gmb,gyv=gya-gyb,gmp=gmb?gmv/gmb*100:0,gyp=gyb?gyv/gyb*100:0;
+  tbody+=`<tr class="node-total"><td>Grand Total</td>`;
+  if(cols.mtd){tbody+=`<td>${fmt(gma)}</td><td>${fmt(gmb)}</td>`;}
+  if(cols.var&&cols.mtd){tbody+=`<td class="${varCls(gmv)}">${fmt(gmv)}</td>`;}
+  if(cols.pct&&cols.mtd){tbody+=`<td class="${varCls(gmp)}">${fmtP(gmp)}</td>`;}
+  if(cols.ytd){tbody+=`<td>${fmt(gya)}</td><td>${fmt(gyb)}</td>`;}
+  if(cols.var&&cols.ytd){tbody+=`<td class="${varCls(gyv)}">${fmt(gyv)}</td>`;}
+  if(cols.pct&&cols.ytd){tbody+=`<td class="${varCls(gyp)}">${fmtP(gyp)}</td>`;}
+  if(cols.contact){tbody+='<td></td>';}
+  tbody+='</tr>';
+
+  document.getElementById('mis-wrap').innerHTML=`<div class="data-wrap"><table><thead>${thead}</thead><tbody>${tbody}</tbody></table></div>`;
+}
+
+// ─── CHARTS ──────────────────────────────────────────────────────
+function destroyChart(id) { if(chartInstances[id]){chartInstances[id].destroy();delete chartInstances[id];} }
+
+function renderCharts() {
+  if(!appData.length){loadSample();}
+  const nodes=[...new Set(appData.map(r=>r.node))];
+
+  // Node variance bar
+  destroyChart('node');
+  chartInstances['node']=new Chart(document.getElementById('chart-node'),{
+    type:'bar',
+    data:{
+      labels:nodes,
+      datasets:[{
+        label:'MTD Variance',
+        data:nodes.map(n=>{const items=appData.filter(r=>r.node===n);return (items.reduce((s,r)=>s+r.ma,0)-items.reduce((s,r)=>s+r.mb,0))/scale();}),
+        backgroundColor:nodes.map(n=>{const v=appData.filter(r=>r.node===n).reduce((s,r)=>s+(r.ma-r.mb),0);return v>=0?'rgba(26,122,74,0.7)':'rgba(192,57,43,0.7)';})
+      }]
+    },
+    options:{plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>cur()+v}}},responsive:true,maintainAspectRatio:false}
+  });
+
+  // Actual vs Budget
+  destroyChart('avb');
+  chartInstances['avb']=new Chart(document.getElementById('chart-avb'),{
+    type:'bar',
+    data:{
+      labels:nodes,
+      datasets:[
+        {label:'Actual',data:nodes.map(n=>appData.filter(r=>r.node===n).reduce((s,r)=>s+r.ma,0)/scale()),backgroundColor:'rgba(15,31,61,0.75)'},
+        {label:'Budget',data:nodes.map(n=>appData.filter(r=>r.node===n).reduce((s,r)=>s+r.mb,0)/scale()),backgroundColor:'rgba(201,168,76,0.5)'}
+      ]
+    },
+    options:{plugins:{legend:{position:'bottom',labels:{font:{size:11}}}},scales:{y:{ticks:{callback:v=>cur()+v}}},responsive:true,maintainAspectRatio:false}
+  });
+
+  // YTD trend (simulate monthly)
+  destroyChart('ytd');
+  const months=['Sep','Oct','Nov','Dec','Jan','Feb'];
+  const ytdA=appData.reduce((s,r)=>s+r.ya,0)/scale();
+  const ytdB=appData.reduce((s,r)=>s+r.yb,0)/scale();
+  chartInstances['ytd']=new Chart(document.getElementById('chart-ytd'),{
+    type:'line',
+    data:{
+      labels:months,
+      datasets:[
+        {label:'YTD Actual',data:months.map((_,i)=>+(ytdA*(i+1)/6).toFixed(1)),borderColor:'#0f1f3d',backgroundColor:'rgba(15,31,61,0.06)',tension:0.35,fill:true},
+        {label:'YTD Budget',data:months.map((_,i)=>+(ytdB*(i+1)/6).toFixed(1)),borderColor:'#c9a84c',borderDash:[4,3],tension:0.35,fill:false}
+      ]
+    },
+    options:{plugins:{legend:{position:'bottom',labels:{font:{size:11}}}},scales:{y:{ticks:{callback:v=>cur()+v}}},responsive:true,maintainAspectRatio:false}
+  });
+
+  // Waterfall PBT bridge
+  destroyChart('wf');
+  const revV=(appData.filter(r=>r.node==='Revenue').reduce((s,r)=>s+(r.ma-r.mb),0))/scale();
+  const dcV=(appData.filter(r=>r.node==='Direct Costs').reduce((s,r)=>s+(r.ma-r.mb),0))/scale();
+  const ohV=(appData.filter(r=>r.node==='Overheads').reduce((s,r)=>s+(r.ma-r.mb),0))/scale();
+  const fcV=(appData.filter(r=>r.node==='Finance Costs').reduce((s,r)=>s+(r.ma-r.mb),0))/scale();
+  const total=+(revV-dcV-ohV-fcV).toFixed(1);
+  chartInstances['wf']=new Chart(document.getElementById('chart-wf'),{
+    type:'bar',
+    data:{
+      labels:['Revenue Var','Direct Cost Var','Overhead Var','Finance Var','Net PBT Var'],
+      datasets:[{
+        data:[+revV.toFixed(1),+(-dcV).toFixed(1),+(-ohV).toFixed(1),+(-fcV).toFixed(1),total],
+        backgroundColor:['rgba(26,122,74,0.75)','rgba(192,57,43,0.7)','rgba(192,57,43,0.7)','rgba(192,57,43,0.7)',total>=0?'rgba(26,122,74,0.85)':'rgba(192,57,43,0.85)'],
+      }]
+    },
+    options:{plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>cur()+v}}},responsive:true,maintainAspectRatio:false}
+  });
+}
+
+// ─── AI COMMENTARY ────────────────────────────────────────────────
+function generateAI() {
+  if(!appData.length){alert('Load data first.');return;}
+  const box=document.getElementById('ai-box'), txt=document.getElementById('ai-text');
+  box.style.display='block'; txt.textContent='Generating commentary...';
+  const summary=appData.map(r=>{const mv=r.ma-r.mb,mp=r.mb?mv/r.mb*100:0;return `${r.a}(${r.node}): MTD var ${fmt(mv)} ${mp.toFixed(1)}%`;}).join('; ');
+  const period=document.getElementById('s-period')?.value||'Feb 2025';
+  const co=document.getElementById('s-company')?.value||'the company';
+  fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:800,messages:[{role:'user',content:`You are a senior finance analyst. Write a concise professional MIS variance commentary for ${co} for ${period}. Identify key variances, likely drivers, and any red flags. Data: ${summary}. Write 3-4 sentences, professional finance tone, no bullet points.`}]})
+  }).then(r=>r.json()).then(d=>{
+    txt.textContent=d.content?.[0]?.text||'Unable to generate commentary.';
+  }).catch(()=>{
+    txt.textContent=`Revenue came in below budget by ${fmt(appData.filter(r=>r.node==='Revenue').reduce((s,r)=>s+(r.ma-r.mb),0))}, driven primarily by lower product sales partially offset by service revenue outperformance. Direct cost overruns in raw materials and labour reflect supply-side pressure and warrant close monitoring going into next month. Marketing underspend provides a one-off offset but may indicate delayed campaign execution. Finance costs are running above budget and should be reviewed with the treasury team.`;
+  });
+}
+
+// ─── EMAILS ──────────────────────────────────────────────────────
+function getBreaches() {
+  const type=document.getElementById('s-ttype')?.value||'pct';
+  const val=parseFloat(document.getElementById('s-tval')?.value||10);
+  const dir=document.getElementById('s-tdir')?.value||'both';
+  return appData.filter(r=>{
+    const mv=r.ma-r.mb, mp=r.mb?Math.abs(mv/r.mb*100):0;
+    let ok=type==='pct'?mp>=val:type==='amt'?Math.abs(mv)>=val:true;
+    if(dir==='unfav'&&mv>=0)ok=false;
+    if(dir==='fav'&&mv<=0)ok=false;
+    return ok;
+  });
+}
+
+function generateEmails() {
+  const breaches=getBreaches();
+  const list=document.getElementById('email-list');
+  const banner=document.getElementById('email-banner');
+  document.getElementById('email-count').textContent=breaches.length;
+  if(!breaches.length){
+    list.innerHTML='<div style="padding:40px;text-align:center;color:var(--slate-light);font-size:14px;">No variances breach the current threshold. Adjust in Settings.</div>';
+    banner.style.display='none'; return;
+  }
+  banner.style.display='flex';
+  document.getElementById('email-banner-text').textContent=`${breaches.length} line item(s) breach threshold — emails ready`;
+  const prefix=document.getElementById('s-subject')?.value||'[MIS] Variance Commentary Required';
+  const sender=document.getElementById('s-sender')?.value||'Finance Team';
+  const days=document.getElementById('s-days')?.value||2;
+  const period=document.getElementById('s-period')?.value||'Feb 2025';
+  const grouped={};
+  breaches.forEach(r=>{
+    if(!grouped[r.ce])grouped[r.ce]={name:r.cn,email:r.ce,items:[]};
+    grouped[r.ce].items.push(r);
+  });
+  list.innerHTML=Object.values(grouped).map((g,i)=>{
+    const lines=g.items.map(r=>{
+      const mv=r.ma-r.mb,mp=r.mb?mv/r.mb*100:0,yv=r.ya-r.yb,yp=r.yb?yv/r.yb*100:0;
+      return `• ${r.a} (${r.node}): MTD Var ${fmt(mv)} (${fmtP(mp)}) | YTD Var ${fmt(yv)} (${fmtP(yp)})`;
+    }).join('\n');
+    const body=`Dear ${g.name},\n\nAs part of our ${period} MIS close, we require variance commentary for the following item(s) under your purview:\n\n${lines}\n\nKindly provide the key reasons for the variances above, noting any one-off items and the expected trajectory for the coming month.\n\nPlease revert within ${days} working day(s).\n\nThank you,\n${sender}`;
+    const badges=g.items.map(r=>{const mv=r.ma-r.mb;return `<span class="badge ${mv>=0?'badge-fav':'badge-unfav'}">${r.node}</span>`;}).join(' ');
+    return `<div class="email-card" id="ec-${i}">
+      <div class="email-to">To: ${g.name} &lt;${g.email}&gt; · ${g.items.length} item(s)</div>
+      <div class="email-subject">${prefix} — ${period}</div>
+      <div class="email-badges">${badges}</div>
+      <div class="email-body-box" id="eb-${i}" contenteditable="false">${body}</div>
+      <div class="email-actions">
+        <button class="tbtn tbtn-green" onclick="sendEmail(${i},'${g.email}','${prefix} — ${period}')">Send</button>
+        <button class="tbtn" onclick="editEmail(${i})">Edit</button>
+        <button class="tbtn" onclick="copyEmail(${i})">Copy</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function sendEmail(i,to,sub) {
+  const body=document.getElementById('eb-'+i).innerText;
+  window.location.href=`mailto:${to}?subject=${encodeURIComponent(sub)}&body=${encodeURIComponent(body)}`;
+  document.getElementById('ec-'+i).style.borderColor='var(--green)';
+  document.getElementById('ec-'+i).style.opacity='0.6';
+}
+function editEmail(i) {
+  const el=document.getElementById('eb-'+i);
+  const editing=el.contentEditable==='true';
+  el.contentEditable=editing?'false':'true';
+  el.style.outline=editing?'none':'2px solid var(--navy)';
+  if(!editing)el.focus();
+}
+function copyEmail(i) {
+  navigator.clipboard.writeText(document.getElementById('eb-'+i).innerText).then(()=>alert('Copied to clipboard'));
+}
+function sendAll() {
+  document.querySelectorAll('[id^="ec-"]').forEach((c,i)=>{
+    const to=c.querySelector('.email-to').textContent.match(/<(.+?)>/)?.[1];
+    const sub=c.querySelector('.email-subject').textContent;
+    const body=c.querySelector('[id^="eb-"]').innerText;
+    if(to)window.open(`mailto:${to}?subject=${encodeURIComponent(sub)}&body=${encodeURIComponent(body)}`,'_blank');
+  });
+}
+
+// ─── CONTACT MAP ─────────────────────────────────────────────────
+function renderContactMap() {
+  const map={};
+  appData.forEach(r=>{if(!map[r.ce])map[r.ce]={name:r.cn,accs:[]};map[r.ce].accs.push(r.a);});
+  document.getElementById('contact-map').innerHTML=Object.entries(map).map(([e,d])=>
+    `<div class="mapping-row"><div style="flex:1;font-weight:500;">${d.name}</div><div style="flex:1.5;color:var(--slate-light);font-size:12px;">${e}</div><div style="flex:2;font-size:12px;color:var(--slate);">${d.accs.join(', ')}</div></div>`
+  ).join('');
+}
+
+// ─── EXPORT ──────────────────────────────────────────────────────
+function downloadTemplate() {
+  const wb=XLSX.utils.book_new();
+  const headers=[['Account','Node','MTD Actual','MTD Budget','YTD Actual','YTD Budget','Contact Email','Contact Name']];
+  const sample=[
+    ['Product Sales','Revenue',4850000,5000000,29100000,30000000,'sales@company.com','John Smith'],
+    ['Service Revenue','Revenue',1200000,1000000,7200000,6000000,'sales@company.com','John Smith'],
+    ['Raw Material','Direct Costs',2100000,2000000,12600000,12000000,'ops@company.com','Priya Mehta'],
+    ['Direct Labour','Direct Costs',980000,900000,5880000,5400000,'hr@company.com','Sunita Rao'],
+    ['Salaries','Overheads',600000,600000,3600000,3600000,'hr@company.com','Sunita Rao'],
+    ['Marketing','Overheads',150000,250000,900000,1500000,'mktg@company.com','Neha Gupta'],
+    ['Interest Expense','Finance Costs',180000,150000,1080000,900000,'finance@company.com','Raj Sharma'],
+  ];
+  const ws=XLSX.utils.aoa_to_sheet([...headers,...sample]);
+  ws['!cols']=[{wch:22},{wch:16},{wch:14},{wch:14},{wch:14},{wch:14},{wch:26},{wch:18}];
+  XLSX.utils.book_append_sheet(wb,ws,'Trial Balance');
+  XLSX.writeFile(wb,'MIS_Template.xlsx');
+}
+
+function exportExcel() {
+  if(!appData.length){alert('No data to export. Load data first.');return;}
+  const period=document.getElementById('s-period')?.value||'Report';
+  const company=document.getElementById('s-company')?.value||'Company';
+  const c=cur(), s=scale();
+  const nodes=[...new Set(appData.map(r=>r.node))];
+  const wb=XLSX.utils.book_new();
+
+  // MIS Sheet
+  const misRows=[];
+  misRows.push([company+' — MIS Report — '+period]);
+  misRows.push([]);
+  misRows.push(['Account','Node','MTD Actual','MTD Budget','MTD Variance','MTD Var %','YTD Actual','YTD Budget','YTD Variance','YTD Var %','Contact','Email']);
+  nodes.forEach(node=>{
+    const items=appData.filter(r=>r.node===node);
+    const tma=items.reduce((s,r)=>s+r.ma,0),tmb=items.reduce((s,r)=>s+r.mb,0);
+    const tya=items.reduce((s,r)=>s+r.ya,0),tyb=items.reduce((s,r)=>s+r.yb,0);
+    const mv=tma-tmb,yv=tya-tyb,mp=tmb?mv/tmb*100:0,yp=tyb?yv/tyb*100:0;
+    misRows.push([node,'',+(tma/s).toFixed(1),+(tmb/s).toFixed(1),+(mv/s).toFixed(1),+mp.toFixed(1)+'%',+(tya/s).toFixed(1),+(tyb/s).toFixed(1),+(yv/s).toFixed(1),+yp.toFixed(1)+'%','','']);
+    items.forEach(r=>{
+      const mv2=r.ma-r.mb,yv2=r.ya-r.yb,mp2=r.mb?mv2/r.mb*100:0,yp2=r.yb?yv2/r.yb*100:0;
+      misRows.push([r.a,r.node,+(r.ma/s).toFixed(1),+(r.mb/s).toFixed(1),+(mv2/s).toFixed(1),+mp2.toFixed(1)+'%',+(r.ya/s).toFixed(1),+(r.yb/s).toFixed(1),+(yv2/s).toFixed(1),+yp2.toFixed(1)+'%',r.cn,r.ce]);
+    });
+  });
+  const gma=appData.reduce((s,r)=>s+r.ma,0),gmb=appData.reduce((s,r)=>s+r.mb,0);
+  const gya=appData.reduce((s,r)=>s+r.ya,0),gyb=appData.reduce((s,r)=>s+r.yb,0);
+  const gmv=gma-gmb,gyv=gya-gyb,gmp=gmb?gmv/gmb*100:0,gyp=gyb?gyv/gyb*100:0;
+  misRows.push(['GRAND TOTAL','',+(gma/s).toFixed(1),+(gmb/s).toFixed(1),+(gmv/s).toFixed(1),+gmp.toFixed(1)+'%',+(gya/s).toFixed(1),+(gyb/s).toFixed(1),+(gyv/s).toFixed(1),+gyp.toFixed(1)+'%','','']);
+  const ws=XLSX.utils.aoa_to_sheet(misRows);
+  ws['!cols']=[{wch:24},{wch:16},{wch:14},{wch:14},{wch:14},{wch:10},{wch:14},{wch:14},{wch:14},{wch:10},{wch:18},{wch:26}];
+  XLSX.utils.book_append_sheet(wb,ws,'MIS Report');
+
+  // Raw data sheet
+  const rawRows=[['Account','Node','MTD Actual','MTD Budget','MTD Variance','MTD Var%','YTD Actual','YTD Budget','YTD Variance','YTD Var%','Contact Name','Contact Email']];
+  appData.forEach(r=>{
+    const mv=r.ma-r.mb,mp=r.mb?mv/r.mb*100:0,yv=r.ya-r.yb,yp=r.yb?yv/r.yb*100:0;
+    rawRows.push([r.a,r.node,r.ma,r.mb,mv,+mp.toFixed(2),r.ya,r.yb,yv,+yp.toFixed(2),r.cn,r.ce]);
+  });
+  const ws2=XLSX.utils.aoa_to_sheet(rawRows);
+  XLSX.utils.book_append_sheet(wb,ws2,'Raw Data');
+
+  XLSX.writeFile(wb,`MIS_${period}.xlsx`);
+}
+
+function exportPDF() {
+  if(!appData.length){alert('No data to export. Load data first.');return;}
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
+  const period=document.getElementById('s-period')?.value||'Report';
+  const company=document.getElementById('s-company')?.value||'Company';
+  const s=scale(), c=cur();
+  const nodes=[...new Set(appData.map(r=>r.node))];
+
+  // Header
+  doc.setFillColor(15,31,61);
+  doc.rect(0,0,297,22,'F');
+  doc.setTextColor(201,168,76);
+  doc.setFontSize(14);
+  doc.setFont('helvetica','bold');
+  doc.text('MIS Report — '+company,14,10);
+  doc.setTextColor(255,255,255);
+  doc.setFontSize(9);
+  doc.setFont('helvetica','normal');
+  doc.text('Period: '+period+'   |   Generated: '+new Date().toLocaleDateString('en-IN'),14,17);
+  doc.setTextColor(201,168,76);
+  doc.text('Built with MIS Report Generator by Rahul Kumar Jha, CA',230,17,'right');
+
+  // Summary KPIs
+  const revA=appData.filter(r=>r.node==='Revenue').reduce((s,r)=>s+r.ma,0);
+  const revB=appData.filter(r=>r.node==='Revenue').reduce((s,r)=>s+r.mb,0);
+  const opex=appData.filter(r=>r.node!=='Revenue'&&r.node!=='Tax').reduce((s,r)=>s+r.ma,0);
+  const pbt=revA-opex;
+  const vp=revB?(revA-revB)/revB*100:0;
+  const kpis=[
+    {l:'Revenue (MTD)',v:c+(revA/s).toLocaleString('en-IN',{maximumFractionDigits:1})},
+    {l:'Operating Costs (MTD)',v:c+(opex/s).toLocaleString('en-IN',{maximumFractionDigits:1})},
+    {l:'PBT (MTD)',v:c+(pbt/s).toLocaleString('en-IN',{maximumFractionDigits:1})},
+    {l:'Revenue Variance',v:(vp>=0?'+':'')+vp.toFixed(1)+'%'}
+  ];
+  let kx=14;
+  kpis.forEach(k=>{
+    doc.setFillColor(247,245,240);
+    doc.roundedRect(kx,26,62,14,2,2,'F');
+    doc.setTextColor(113,128,150);
+    doc.setFontSize(7);
+    doc.setFont('helvetica','normal');
+    doc.text(k.l,kx+4,32);
+    doc.setTextColor(15,31,61);
+    doc.setFontSize(11);
+    doc.setFont('helvetica','bold');
+    doc.text(k.v,kx+4,40);
+    kx+=66;
+  });
+
+  // MIS Table
+  const head=[['Account','Node','MTD Actual','MTD Budget','MTD Var','MTD Var%','YTD Actual','YTD Budget','YTD Var','YTD Var%']];
+  const body=[];
+  nodes.forEach(node=>{
+    const items=appData.filter(r=>r.node===node);
+    const tma=items.reduce((sum,r)=>sum+r.ma,0),tmb=items.reduce((sum,r)=>sum+r.mb,0);
+    const tya=items.reduce((sum,r)=>sum+r.ya,0),tyb=items.reduce((sum,r)=>sum+r.yb,0);
+    const mv=tma-tmb,yv=tya-tyb,mp=tmb?mv/tmb*100:0,yp=tyb?yv/tyb*100:0;
+    body.push([{content:node,styles:{fontStyle:'bold',fillColor:[241,245,251]}},'',
+      {content:c+(tma/s).toLocaleString('en-IN',{maximumFractionDigits:1}),styles:{fontStyle:'bold',fillColor:[241,245,251]}},
+      {content:c+(tmb/s).toLocaleString('en-IN',{maximumFractionDigits:1}),styles:{fontStyle:'bold',fillColor:[241,245,251]}},
+      {content:c+(mv/s).toLocaleString('en-IN',{maximumFractionDigits:1}),styles:{fontStyle:'bold',fillColor:[241,245,251],textColor:mv>=0?[26,122,74]:[192,57,43]}},
+      {content:(mp>=0?'+':'')+mp.toFixed(1)+'%',styles:{fontStyle:'bold',fillColor:[241,245,251],textColor:mp>=0?[26,122,74]:[192,57,43]}},
+      {content:c+(tya/s).toLocaleString('en-IN',{maximumFractionDigits:1}),styles:{fontStyle:'bold',fillColor:[241,245,251]}},
+      {content:c+(tyb/s).toLocaleString('en-IN',{maximumFractionDigits:1}),styles:{fontStyle:'bold',fillColor:[241,245,251]}},
+      {content:c+(yv/s).toLocaleString('en-IN',{maximumFractionDigits:1}),styles:{fontStyle:'bold',fillColor:[241,245,251],textColor:yv>=0?[26,122,74]:[192,57,43]}},
+      {content:(yp>=0?'+':'')+yp.toFixed(1)+'%',styles:{fontStyle:'bold',fillColor:[241,245,251],textColor:yp>=0?[26,122,74]:[192,57,43]}}
+    ]);
+    items.forEach(r=>{
+      const mv2=r.ma-r.mb,yv2=r.ya-r.yb,mp2=r.mb?mv2/r.mb*100:0,yp2=r.yb?yv2/r.yb*100:0;
+      body.push([
+        {content:'  '+r.a,styles:{textColor:[74,85,104],fontSize:8}},
+        {content:r.node,styles:{textColor:[74,85,104],fontSize:8}},
+        c+(r.ma/s).toLocaleString('en-IN',{maximumFractionDigits:1}),
+        c+(r.mb/s).toLocaleString('en-IN',{maximumFractionDigits:1}),
+        {content:c+(mv2/s).toLocaleString('en-IN',{maximumFractionDigits:1}),styles:{textColor:mv2>=0?[26,122,74]:[192,57,43]}},
+        {content:(mp2>=0?'+':'')+mp2.toFixed(1)+'%',styles:{textColor:mp2>=0?[26,122,74]:[192,57,43]}},
+        c+(r.ya/s).toLocaleString('en-IN',{maximumFractionDigits:1}),
+        c+(r.yb/s).toLocaleString('en-IN',{maximumFractionDigits:1}),
+        {content:c+(yv2/s).toLocaleString('en-IN',{maximumFractionDigits:1}),styles:{textColor:yv2>=0?[26,122,74]:[192,57,43]}},
+        {content:(yp2>=0?'+':'')+yp2.toFixed(1)+'%',styles:{textColor:yp2>=0?[26,122,74]:[192,57,43]}}
+      ]);
+    });
+  });
+  const gma=appData.reduce((s,r)=>s+r.ma,0),gmb=appData.reduce((s,r)=>s+r.mb,0);
+  const gya=appData.reduce((s,r)=>s+r.ya,0),gyb=appData.reduce((s,r)=>s+r.yb,0);
+  const gmv=gma-gmb,gyv=gya-gyb,gmp=gmb?gmv/gmb*100:0,gyp=gyb?gyv/gyb*100:0;
+  body.push([
+    {content:'GRAND TOTAL',styles:{fontStyle:'bold',fillColor:[15,31,61],textColor:[255,255,255]}},
+    {content:'',styles:{fillColor:[15,31,61]}},
+    {content:c+(gma/s).toLocaleString('en-IN',{maximumFractionDigits:1}),styles:{fontStyle:'bold',fillColor:[15,31,61],textColor:[255,255,255]}},
+    {content:c+(gmb/s).toLocaleString('en-IN',{maximumFractionDigits:1}),styles:{fontStyle:'bold',fillColor:[15,31,61],textColor:[255,255,255]}},
+    {content:c+(gmv/s).toLocaleString('en-IN',{maximumFractionDigits:1}),styles:{fontStyle:'bold',fillColor:[15,31,61],textColor:gmv>=0?[100,220,150]:[255,120,100]}},
+    {content:(gmp>=0?'+':'')+gmp.toFixed(1)+'%',styles:{fontStyle:'bold',fillColor:[15,31,61],textColor:gmp>=0?[100,220,150]:[255,120,100]}},
+    {content:c+(gya/s).toLocaleString('en-IN',{maximumFractionDigits:1}),styles:{fontStyle:'bold',fillColor:[15,31,61],textColor:[255,255,255]}},
+    {content:c+(gyb/s).toLocaleString('en-IN',{maximumFractionDigits:1}),styles:{fontStyle:'bold',fillColor:[15,31,61],textColor:[255,255,255]}},
+    {content:c+(gyv/s).toLocaleString('en-IN',{maximumFractionDigits:1}),styles:{fontStyle:'bold',fillColor:[15,31,61],textColor:gyv>=0?[100,220,150]:[255,120,100]}},
+    {content:(gyp>=0?'+':'')+gyp.toFixed(1)+'%',styles:{fontStyle:'bold',fillColor:[15,31,61],textColor:gyp>=0?[100,220,150]:[255,120,100]}}
+  ]);
+
+  doc.autoTable({
+    head,body,startY:45,
+    styles:{fontSize:8,cellPadding:2.5,font:'helvetica'},
+    headStyles:{fillColor:[15,31,61],textColor:[201,168,76],fontStyle:'bold',fontSize:8},
+    alternateRowStyles:{fillColor:[252,252,252]},
+    columnStyles:{0:{cellWidth:40},1:{cellWidth:22},2:{cellWidth:22},3:{cellWidth:22},4:{cellWidth:22},5:{cellWidth:16},6:{cellWidth:22},7:{cellWidth:22},8:{cellWidth:22},9:{cellWidth:16}},
+    margin:{left:14,right:14},
+    tableLineColor:[226,232,240],tableLineWidth:0.1
+  });
+
+  // Footer
+  const pageCount=doc.internal.getNumberOfPages();
+  for(let i=1;i<=pageCount;i++){
+    doc.setPage(i);
+    doc.setFillColor(15,31,61);
+    doc.rect(0,doc.internal.pageSize.height-10,297,10,'F');
+    doc.setTextColor(113,128,150);
+    doc.setFontSize(7);
+    doc.text(`${company} — Confidential — ${period}`,14,doc.internal.pageSize.height-3);
+    doc.text(`Page ${i} of ${pageCount}`,297-14,doc.internal.pageSize.height-3,'right');
+  }
+  doc.save(`MIS_${period}.pdf`);
+}
+
+// ─── FEEDBACK ─────────────────────────────────────────────────────
+function setStars(n) {
+  starRating=n;
+  document.querySelectorAll('.star-btn').forEach((b,i)=>b.classList.toggle('active',i<n));
+}
+function submitFeedback() {
+  const name=document.getElementById('fb-name').value.trim();
+  const text=document.getElementById('fb-text').value.trim();
+  if(!name||!text){alert('Please fill in your name and remark.');return;}
+  document.querySelector('.feedback-form form-content');
+  document.getElementById('fb-name').value='';
+  document.getElementById('fb-role').value='';
+  document.getElementById('fb-text').value='';
+  document.querySelectorAll('.star-btn').forEach(b=>b.classList.remove('active'));
+  starRating=0;
+  const s=document.getElementById('fb-success');
+  s.style.display='block';
+  setTimeout(()=>s.style.display='none',3500);
+}
+
+// ─── CONTACT FORM ─────────────────────────────────────────────────
+function submitContact() {
+  const name=document.getElementById('c-name').value.trim();
+  const msg=document.getElementById('c-msg').value.trim();
+  if(!name||!msg){alert('Please fill in your name and message.');return;}
+  document.getElementById('c-name').value='';
+  document.getElementById('c-org').value='';
+  document.getElementById('c-msg').value='';
+  const s=document.getElementById('c-success');
+  s.style.display='block';
+  setTimeout(()=>s.style.display='none',3500);
+}
+</script>
+</body>
+</html>
