@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MIS Report Generator — Rahul Kumar Jha, CA</title>
+<title>MIS Report Generator — Free Finance Tool</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -309,27 +309,26 @@ footer span { color: var(--gold); }
 
 <!-- NAV -->
 <nav>
-  <div class="nav-logo">RKJ <span>·</span> MIS</div>
+  <div class="nav-logo">MIS <span>·</span> Generator</div>
   <div class="nav-links">
     <a href="#home">Home</a>
     <a href="#features">Features</a>
-    <a href="#tool">Tool</a>
-    <a href="#profile">About</a>
-    <a href="#feedback">Reviews</a>
-    <a href="#contact">Contact</a>
+    <a href="#tool">Launch Tool</a>
+    <a href="#about">About</a>
+    <a href="#feedback">Feedback</a>
   </div>
-  <a href="#tool" class="nav-cta">Launch Tool</a>
+  <a href="#tool" class="nav-cta">Try it free</a>
 </nav>
 
 <!-- HERO -->
 <section id="home">
   <div class="hero-grid"></div>
   <div class="hero-content">
-    <div class="hero-tag fade-up">Built by a Chartered Accountant</div>
-    <h1 class="hero-title fade-up delay-1">Intelligent MIS Reporting,<br><em>from Trial Balance to Inbox.</em></h1>
-    <p class="hero-sub fade-up delay-2">Upload your Trial Balance, generate a fully formatted MIS report with variance analysis, AI-powered commentary, and auto-drafted emails — in minutes, not hours.</p>
+    <div class="hero-tag fade-up">Free tool for finance teams</div>
+    <h1 class="hero-title fade-up delay-1">From Trial Balance<br><em>to MIS Report in minutes.</em></h1>
+    <p class="hero-sub fade-up delay-2">Upload your Trial Balance, generate a fully formatted MIS report with variance analysis, AI-powered commentary, and auto-drafted emails — no Excel macros, no installs, no cost.</p>
     <div class="hero-btns fade-up delay-3">
-      <a href="#tool" class="btn-primary">Try the Tool</a>
+      <a href="#tool" class="btn-primary">Launch the tool</a>
       <a href="#features" class="btn-outline">See how it works</a>
     </div>
     <div class="hero-stats fade-up delay-4">
@@ -346,8 +345,8 @@ footer span { color: var(--gold); }
         <div class="hero-stat-lbl">Auto commentary & emails</div>
       </div>
       <div>
-        <div class="hero-stat-val">0</div>
-        <div class="hero-stat-lbl">Install required</div>
+        <div class="hero-stat-val">Free</div>
+        <div class="hero-stat-lbl">No install, no login needed</div>
       </div>
     </div>
   </div>
@@ -415,6 +414,7 @@ footer span { color: var(--gold); }
         <div class="tool-tab" onclick="switchTab('report')">MIS Report</div>
         <div class="tool-tab" onclick="switchTab('charts')">Charts</div>
         <div class="tool-tab" onclick="switchTab('emails')">Email Drafts</div>
+        <div class="tool-tab" onclick="switchTab('bs')">Balance Sheet</div>
         <div class="tool-tab" onclick="switchTab('settings')">Settings</div>
       </div>
 
@@ -461,25 +461,40 @@ footer span { color: var(--gold); }
       <div id="tp-report" class="tool-panel">
         <div class="metric-row" id="metric-row">
           <div class="metric-card"><div class="metric-val" id="m-rev">—</div><div class="metric-lbl">Revenue MTD</div></div>
-          <div class="metric-card"><div class="metric-val" id="m-opex">—</div><div class="metric-lbl">OpEx MTD</div></div>
+          <div class="metric-card"><div class="metric-val" id="m-gp">—</div><div class="metric-lbl">Gross Profit MTD</div></div>
+          <div class="metric-card"><div class="metric-val" id="m-ebitda">—</div><div class="metric-lbl">EBITDA MTD</div></div>
           <div class="metric-card"><div class="metric-val" id="m-pbt">—</div><div class="metric-lbl">PBT MTD</div></div>
-          <div class="metric-card"><div class="metric-val" id="m-var">—</div><div class="metric-lbl">Overall Variance</div></div>
+          <div class="metric-card"><div class="metric-val" id="m-pat">—</div><div class="metric-lbl">PAT MTD</div></div>
+          <div class="metric-card"><div class="metric-val" id="m-var">—</div><div class="metric-lbl">Revenue Var%</div></div>
         </div>
         <div id="ai-box" class="ai-box" style="display:none;">
           <div class="ai-box-title">AI Commentary</div>
           <div class="ai-box-text" id="ai-text"></div>
         </div>
-        <div class="tags-row" id="col-tags">
-          <div class="tag on" data-col="mtd" onclick="togCol(this,'mtd')">MTD</div>
-          <div class="tag on" data-col="ytd" onclick="togCol(this,'ytd')">YTD</div>
-          <div class="tag on" data-col="var" onclick="togCol(this,'var')">Variance ₹</div>
-          <div class="tag on" data-col="pct" onclick="togCol(this,'pct')">Variance %</div>
-          <div class="tag" data-col="contact" onclick="togCol(this,'contact')">Contact</div>
-        </div>
-        <div class="action-row" style="margin-bottom:16px;">
-          <button class="tbtn tbtn-gold" onclick="generateAI()">✦ AI Commentary</button>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+          <div class="tags-row" id="col-tags" style="margin-bottom:0;">
+            <div class="tag on" data-col="mtd" onclick="togCol(this,'mtd')">MTD</div>
+            <div class="tag on" data-col="ytd" onclick="togCol(this,'ytd')">YTD</div>
+            <div class="tag on" data-col="var" onclick="togCol(this,'var')">Variance ₹</div>
+            <div class="tag on" data-col="pct" onclick="togCol(this,'pct')">Variance %</div>
+            <div class="tag" data-col="contact" onclick="togCol(this,'contact')">Contact</div>
+          </div>
+          <div style="display:flex;gap:6px;">
+            <button class="tbtn" onclick="toggleAllNodes()">Expand / Collapse All</button>
+            <button class="tbtn tbtn-gold" onclick="generateAI()">✦ AI Commentary</button>
+          </div>
         </div>
         <div class="data-wrap" id="mis-wrap"><div style="padding:48px;text-align:center;color:var(--slate-light);font-size:14px;">Load data and click Generate Report</div></div>
+        <!-- P&L Summary -->
+        <div id="pnl-section" style="display:none;margin-top:24px;">
+          <div style="font-size:12px;font-weight:600;letter-spacing:0.07em;text-transform:uppercase;color:var(--slate-light);margin-bottom:10px;">P&L Summary</div>
+          <div class="data-wrap" id="pnl-wrap"></div>
+        </div>
+        <!-- Financial Ratios -->
+        <div id="ratios-section" style="display:none;margin-top:24px;">
+          <div style="font-size:12px;font-weight:600;letter-spacing:0.07em;text-transform:uppercase;color:var(--slate-light);margin-bottom:10px;">Financial Metrics</div>
+          <div id="ratios-wrap" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;"></div>
+        </div>
       </div>
 
       <!-- CHARTS -->
@@ -508,36 +523,137 @@ footer span { color: var(--gold); }
         <div id="email-list"><div style="padding:40px;text-align:center;color:var(--slate-light);font-size:14px;">Generate report to auto-draft emails for threshold-breaching variances</div></div>
       </div>
 
+      <!-- BALANCE SHEET -->
+      <div id="tp-bs" class="tool-panel">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
+          <div class="lbl">Balance Sheet — <span id="bs-period-lbl">—</span></div>
+          <div style="display:flex;gap:6px;">
+            <button class="tbtn tbtn-navy" onclick="renderBS()">Refresh</button>
+          </div>
+        </div>
+        <div id="bs-alert" style="display:none;background:#fef9ec;border:1px solid #f0d060;border-radius:var(--radius);padding:10px 14px;font-size:12px;color:#7a5c00;margin-bottom:14px;"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;" id="bs-grid">
+          <div>
+            <div style="font-size:12px;font-weight:600;letter-spacing:0.07em;text-transform:uppercase;color:var(--navy);margin-bottom:8px;padding:8px 12px;background:var(--navy);color:white;border-radius:var(--radius);">Assets</div>
+            <div class="data-wrap" id="bs-assets-wrap"><div style="padding:24px;text-align:center;color:var(--slate-light);font-size:13px;">Load data to view</div></div>
+          </div>
+          <div>
+            <div style="font-size:12px;font-weight:600;letter-spacing:0.07em;text-transform:uppercase;margin-bottom:8px;padding:8px 12px;background:var(--gold);color:var(--navy);border-radius:var(--radius);">Liabilities & Equity</div>
+            <div class="data-wrap" id="bs-liab-wrap"><div style="padding:24px;text-align:center;color:var(--slate-light);font-size:13px;">Load data to view</div></div>
+          </div>
+        </div>
+        <div id="bs-check" style="margin-top:14px;display:none;padding:12px 16px;border-radius:var(--radius);font-size:13px;font-weight:500;"></div>
+      </div>
+
       <!-- SETTINGS -->
       <div id="tp-settings" class="tool-panel">
         <div class="settings-grid">
+          <div class="setting-card">
+            <div class="setting-card-title">Report settings</div>
+            <div class="field-row"><label>Company</label><input type="text" id="s-company" value="Acme Corp Ltd"></div>
+            <div class="field-row"><label>Period</label><input type="month" id="s-period" value="2025-02" onchange="document.getElementById('t-period').textContent=this.value"></div>
+            <div class="field-row"><label>Currency</label><select id="s-cur"><option value="₹">INR (₹)</option><option value="$">USD ($)</option><option value="£">GBP (£)</option></select></div>
+            <div class="field-row"><label>Scale</label><select id="s-scale"><option value="1">Actuals</option><option value="1000" selected>Thousands</option><option value="100000">Lakhs</option><option value="10000000">Crores</option></select></div>
+          </div>
           <div class="setting-card">
             <div class="setting-card-title">Email threshold</div>
             <div class="field-row"><label>Trigger by</label><select id="s-ttype" onchange="updateThresh()"><option value="pct">Variance %</option><option value="amt">Amount (₹)</option><option value="node">MIS Node</option></select></div>
             <div class="field-row" id="s-tval-row"><label>Threshold value</label><div style="display:flex;gap:8px;align-items:center;"><input type="number" id="s-tval" value="10" min="0"><span id="s-tunit" style="font-size:13px;color:var(--slate);">%</span></div></div>
             <div class="field-row"><label>Direction</label><select id="s-tdir"><option value="both">Both sides</option><option value="unfav">Unfavourable only</option><option value="fav">Favourable only</option></select></div>
-          </div>
-          <div class="setting-card">
-            <div class="setting-card-title">Columns &amp; display</div>
-            <div class="toggle-row"><span class="toggle-lbl">Show MTD</span><div class="tog on" onclick="this.classList.toggle('on')"></div></div>
-            <div class="toggle-row"><span class="toggle-lbl">Show YTD</span><div class="tog on" onclick="this.classList.toggle('on')"></div></div>
-            <div class="toggle-row"><span class="toggle-lbl">Variance amount</span><div class="tog on" onclick="this.classList.toggle('on')"></div></div>
-            <div class="toggle-row"><span class="toggle-lbl">Variance %</span><div class="tog on" onclick="this.classList.toggle('on')"></div></div>
-            <div class="toggle-row"><span class="toggle-lbl">Prior year</span><div class="tog" onclick="this.classList.toggle('on')"></div></div>
-            <div class="toggle-row"><span class="toggle-lbl">Forecast</span><div class="tog" onclick="this.classList.toggle('on')"></div></div>
-          </div>
-          <div class="setting-card">
-            <div class="setting-card-title">Email template</div>
-            <div class="field-row"><label>Sender name</label><input type="text" id="s-sender" value="Finance Team — Rahul Kumar Jha"></div>
+            <div class="field-row"><label>Sender name</label><input type="text" id="s-sender" value="Finance Team"></div>
             <div class="field-row"><label>Subject prefix</label><input type="text" id="s-subject" value="[MIS] Variance Commentary Required"></div>
             <div class="field-row"><label>Reply deadline (days)</label><input type="number" id="s-days" value="2"></div>
           </div>
-          <div class="setting-card">
-            <div class="setting-card-title">Report settings</div>
-            <div class="field-row"><label>Currency</label><select id="s-cur"><option value="₹">INR (₹)</option><option value="$">USD ($)</option><option value="£">GBP (£)</option></select></div>
-            <div class="field-row"><label>Scale</label><select id="s-scale"><option value="1">Actuals</option><option value="1000" selected>Thousands</option><option value="100000">Lakhs</option><option value="10000000">Crores</option></select></div>
-            <div class="field-row"><label>Period</label><input type="month" id="s-period" value="2025-02" onchange="document.getElementById('t-period').textContent=this.value"></div>
-            <div class="field-row"><label>Company</label><input type="text" id="s-company" value="Acme Corp Ltd"></div>
+          <div class="setting-card" style="grid-column:1/-1;">
+            <div class="setting-card-title">P&amp;L structure — node classification (IFRS-aligned, customisable)</div>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:4px;">
+              <div>
+                <div style="font-size:11px;font-weight:600;color:var(--slate-light);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Revenue nodes</div>
+                <textarea id="pnl-revenue" rows="3" style="width:100%;font-size:12px;padding:8px;border:1px solid var(--border-dark);border-radius:var(--radius);font-family:var(--font-sans);resize:vertical;">Revenue
+Other Income</textarea>
+              </div>
+              <div>
+                <div style="font-size:11px;font-weight:600;color:var(--slate-light);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Direct cost nodes (for GP)</div>
+                <textarea id="pnl-direct" rows="3" style="width:100%;font-size:12px;padding:8px;border:1px solid var(--border-dark);border-radius:var(--radius);font-family:var(--font-sans);resize:vertical;">Direct Costs</textarea>
+              </div>
+              <div>
+                <div style="font-size:11px;font-weight:600;color:var(--slate-light);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Overhead nodes (for EBITDA)</div>
+                <textarea id="pnl-overhead" rows="3" style="width:100%;font-size:12px;padding:8px;border:1px solid var(--border-dark);border-radius:var(--radius);font-family:var(--font-sans);resize:vertical;">Overheads</textarea>
+              </div>
+              <div>
+                <div style="font-size:11px;font-weight:600;color:var(--slate-light);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Depreciation nodes (for EBIT)</div>
+                <textarea id="pnl-depn" rows="3" style="width:100%;font-size:12px;padding:8px;border:1px solid var(--border-dark);border-radius:var(--radius);font-family:var(--font-sans);resize:vertical;">Depreciation</textarea>
+              </div>
+              <div>
+                <div style="font-size:11px;font-weight:600;color:var(--slate-light);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Finance cost nodes (for PBT)</div>
+                <textarea id="pnl-finance" rows="3" style="width:100%;font-size:12px;padding:8px;border:1px solid var(--border-dark);border-radius:var(--radius);font-family:var(--font-sans);resize:vertical;">Finance Costs</textarea>
+              </div>
+              <div>
+                <div style="font-size:11px;font-weight:600;color:var(--slate-light);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Tax nodes (for PAT)</div>
+                <textarea id="pnl-tax" rows="3" style="width:100%;font-size:12px;padding:8px;border:1px solid var(--border-dark);border-radius:var(--radius);font-family:var(--font-sans);resize:vertical;">Tax</textarea>
+              </div>
+            </div>
+          </div>
+          <div class="setting-card" style="grid-column:1/-1;">
+            <div class="setting-card-title">Balance Sheet — node classification (IFRS-aligned, customisable)</div>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:4px;">
+              <div>
+                <div style="font-size:11px;font-weight:600;color:var(--green);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Non-current Assets</div>
+                <textarea id="bs-nca" rows="3" style="width:100%;font-size:12px;padding:8px;border:1px solid var(--border-dark);border-radius:var(--radius);font-family:var(--font-sans);resize:vertical;">Fixed Assets
+Right-of-Use Assets
+Intangible Assets
+Long-term Investments</textarea>
+              </div>
+              <div>
+                <div style="font-size:11px;font-weight:600;color:var(--green);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Current Assets</div>
+                <textarea id="bs-ca" rows="3" style="width:100%;font-size:12px;padding:8px;border:1px solid var(--border-dark);border-radius:var(--radius);font-family:var(--font-sans);resize:vertical;">Current Assets
+Inventory
+Trade Receivables
+Cash and Bank
+Short-term Investments</textarea>
+              </div>
+              <div>
+                <div style="font-size:11px;font-weight:600;color:var(--red);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Current Liabilities</div>
+                <textarea id="bs-cl" rows="3" style="width:100%;font-size:12px;padding:8px;border:1px solid var(--border-dark);border-radius:var(--radius);font-family:var(--font-sans);resize:vertical;">Current Liabilities
+Trade Payables
+Short-term Borrowings</textarea>
+              </div>
+              <div>
+                <div style="font-size:11px;font-weight:600;color:var(--red);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Non-current Liabilities</div>
+                <textarea id="bs-ncl" rows="3" style="width:100%;font-size:12px;padding:8px;border:1px solid var(--border-dark);border-radius:var(--radius);font-family:var(--font-sans);resize:vertical;">Long-term Liabilities
+Loans and Borrowings
+Lease Liabilities
+Deferred Tax Liability</textarea>
+              </div>
+              <div>
+                <div style="font-size:11px;font-weight:600;color:var(--navy-mid);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Equity & Reserves</div>
+                <textarea id="bs-eq" rows="3" style="width:100%;font-size:12px;padding:8px;border:1px solid var(--border-dark);border-radius:var(--radius);font-family:var(--font-sans);resize:vertical;">Equity
+Share Capital
+Reserves and Surplus
+Retained Earnings</textarea>
+              </div>
+              <div>
+                <div style="font-size:11px;font-weight:600;color:var(--slate-light);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">P&amp;L account (BS bridge)</div>
+                <textarea id="bs-pnl-bridge" rows="3" style="width:100%;font-size:12px;padding:8px;border:1px solid var(--border-dark);border-radius:var(--radius);font-family:var(--font-sans);resize:vertical;">P&L Account</textarea>
+              </div>
+            </div>
+          </div>
+          <div class="setting-card" style="grid-column:1/-1;">
+            <div class="setting-card-title">Financial metrics &amp; ratios — toggle which appear on the report</div>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0;">
+              <div class="toggle-row"><span class="toggle-lbl">Gross Profit %</span><div class="tog on" id="tog-gp" onclick="this.classList.toggle('on')"></div></div>
+              <div class="toggle-row"><span class="toggle-lbl">EBITDA %</span><div class="tog on" id="tog-ebitda" onclick="this.classList.toggle('on')"></div></div>
+              <div class="toggle-row"><span class="toggle-lbl">EBIT %</span><div class="tog on" id="tog-ebit" onclick="this.classList.toggle('on')"></div></div>
+              <div class="toggle-row"><span class="toggle-lbl">PBT %</span><div class="tog on" id="tog-pbt" onclick="this.classList.toggle('on')"></div></div>
+              <div class="toggle-row"><span class="toggle-lbl">PAT %</span><div class="tog on" id="tog-pat" onclick="this.classList.toggle('on')"></div></div>
+              <div class="toggle-row"><span class="toggle-lbl">Effective Tax Rate</span><div class="tog on" id="tog-taxrate" onclick="this.classList.toggle('on')"></div></div>
+              <div class="toggle-row"><span class="toggle-lbl">Current Ratio</span><div class="tog" id="tog-cr" onclick="this.classList.toggle('on')"></div></div>
+              <div class="toggle-row"><span class="toggle-lbl">Quick Ratio</span><div class="tog" id="tog-qr" onclick="this.classList.toggle('on')"></div></div>
+              <div class="toggle-row"><span class="toggle-lbl">Working Capital</span><div class="tog" id="tog-wc" onclick="this.classList.toggle('on')"></div></div>
+              <div class="toggle-row"><span class="toggle-lbl">Debt / Equity</span><div class="tog" id="tog-de" onclick="this.classList.toggle('on')"></div></div>
+              <div class="toggle-row"><span class="toggle-lbl">Interest Coverage</span><div class="tog" id="tog-ic" onclick="this.classList.toggle('on')"></div></div>
+              <div class="toggle-row"><span class="toggle-lbl">Debt / EBITDA</span><div class="tog" id="tog-debitda" onclick="this.classList.toggle('on')"></div></div>
+            </div>
           </div>
         </div>
         <div class="setting-card" style="margin-top:18px;">
@@ -549,163 +665,66 @@ footer span { color: var(--gold); }
   </div>
 </section>
 
-<!-- PROFILE -->
-<section id="profile">
-  <div class="section-inner">
-    <div class="section-eyebrow">About the Builder</div>
-    <div class="section-title">Rahul Kumar Jha</div>
-    <div class="profile-layout">
-      <div>
-        <div class="profile-card">
-          <div class="profile-avatar">RKJ</div>
-          <div class="profile-name">Rahul Kumar Jha</div>
-          <div class="profile-title">Chartered Accountant</div>
-          <div class="profile-detail">📍 Jharkhand, India — 814133</div>
-          <div class="profile-detail">📞 +91-7903185400</div>
-          <div class="profile-detail">🎓 ICAI CA | B.Com (Hons.) Calcutta University</div>
-          <hr class="profile-divider">
-          <div style="margin-bottom:8px;font-size:11px;color:rgba(255,255,255,0.4);letter-spacing:0.06em;text-transform:uppercase;">Core skills</div>
-          <div>
-            <span class="profile-skill-tag">FP&A</span>
-            <span class="profile-skill-tag">MIS Reporting</span>
-            <span class="profile-skill-tag">Variance Analysis</span>
-            <span class="profile-skill-tag">Group Consolidation</span>
-            <span class="profile-skill-tag">Month-End Close</span>
-            <span class="profile-skill-tag">US-GAAP / IFRS / Ind AS</span>
-            <span class="profile-skill-tag">Fixed Assets & Leases</span>
-            <span class="profile-skill-tag">SAP · Oracle · Tally</span>
-            <span class="profile-skill-tag">Power BI</span>
-            <span class="profile-skill-tag">Advanced Excel</span>
-            <span class="profile-skill-tag">Internal Controls</span>
-            <span class="profile-skill-tag">Team Leadership</span>
-            <span class="profile-skill-tag">Statutory Audit</span>
-            <span class="profile-skill-tag">Process Automation</span>
-          </div>
-        </div>
-      </div>
-      <div class="profile-right">
-        <h3>4 years of progressive finance experience across Goldman Sachs, Jumbo Electronics & Singhi & Co.</h3>
-        <p>Chartered Accountant with a proven track record in financial reporting, group consolidation, month-end/year-end close, multi-entity reconciliations, variance analysis, and management reporting across global and multi-jurisdiction environments. Experienced in US-GAAP, IFRS, and Ind AS aligned accounting, process automation (SAP / Power BI), audit coordination, and cross-functional stakeholder partnering.</p>
-        <p>I built this MIS tool to solve a problem I lived daily at Goldman Sachs — the monthly close grind of manually compiling Trial Balances, chasing variance commentary across teams, and formatting MIS decks under deadline. Open to relocation and hybrid roles.</p>
-
-        <div style="margin-top:28px;">
-          <div style="font-size:12px;font-weight:600;letter-spacing:0.07em;text-transform:uppercase;color:var(--slate-light);margin-bottom:18px;">Professional experience</div>
-
-          <div class="exp-item">
-            <div class="exp-title">Assistant Manager – Finance</div>
-            <div class="exp-co">Jumbo Electronics Co. Ltd. · Dubai, UAE</div>
-            <div class="exp-period">Jun 2025 – Jul 2025</div>
-            <div style="font-size:12px;color:var(--slate);margin-top:5px;line-height:1.65;">Managed a team of 8 analysts; oversaw financial operations, reporting accuracy and governance across group entities. Maintained Fixed Assets and Lease registers; coordinated month-end close and IFRS compliance.</div>
-          </div>
-
-          <div class="exp-item">
-            <div class="exp-title">Associate – Finance</div>
-            <div class="exp-co">Goldman Sachs · Hyderabad, India</div>
-            <div class="exp-period">Jan 2025 – Jun 2025</div>
-            <div style="font-size:12px;color:var(--slate);margin-top:5px;line-height:1.65;">Led monthly close including journal entries, GL reconciliations, accruals, FX hedging and book closures for global entities. Prepared MIS reports with detailed variance analysis (expenses, income, chargebacks) for senior leadership. Drove automation for lease/fixed assets reporting. Maintained Fixed Assets and Lease registers; prepared ASC 842 / IFRS 16 disclosures.</div>
-          </div>
-
-          <div class="exp-item">
-            <div class="exp-title">Senior Analyst – Finance</div>
-            <div class="exp-co">Goldman Sachs · Hyderabad, India</div>
-            <div class="exp-period">Apr 2022 – Dec 2024</div>
-            <div style="font-size:12px;color:var(--slate);margin-top:5px;line-height:1.65;">Promoted to Associate for outstanding performance. Executed sub-ledger close, reconciliations and variance analysis for global leases and fixed assets under US-GAAP and IFRS. Developed quarterly financial presentations for senior management. Supported group audits, regulatory reporting and compliance; mentored junior analysts.</div>
-          </div>
-
-          <div class="exp-item">
-            <div class="exp-title">Audit Assistant</div>
-            <div class="exp-co">Singhi & Co. · Kolkata, India</div>
-            <div class="exp-period">Apr 2018 – Apr 2021</div>
-            <div style="font-size:12px;color:var(--slate);margin-top:5px;line-height:1.65;">Reviewed consolidated and standalone financial statements for listed companies under Indian GAAP / Ind AS. Conducted statutory and tax audits (Sec. 44AB); performed Y-o-Y / Q-o-Q variance analysis and cost optimisation reviews.</div>
-          </div>
-
-          <div style="margin-top:22px;">
-            <div style="font-size:12px;font-weight:600;letter-spacing:0.07em;text-transform:uppercase;color:var(--slate-light);margin-bottom:12px;">Leadership & extracurriculars</div>
-            <div style="font-size:13px;color:var(--slate);line-height:1.75;">
-              Ex-President &amp; Ex-VP Education — Toastmasters International, Walk the Talk Hyderabad Club<br>
-              Presided over Social Committee, Controllers Division
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
 <!-- FEEDBACK -->
 <section id="feedback">
   <div class="section-inner">
-    <div class="section-eyebrow">Reviews & Remarks</div>
-    <div class="section-title">Share your feedback</div>
-    <div class="section-desc">Tried the tool? I'd love to hear what you think — whether you're a recruiter, a finance professional, or just exploring. Your remarks help improve the product.</div>
+    <div class="section-eyebrow">Community Feedback</div>
+    <div class="section-title">Found it useful? Let me know.</div>
+    <div class="section-desc">This tool is free and open to the finance community. Bugs, feature ideas, or a quick note — all welcome.</div>
     <div style="max-width:640px;">
-      <div class="feedback-form" style="border:1px solid var(--border);border-radius:var(--radius-lg);padding:32px;background:var(--white);">
+      <div style="border:1px solid var(--border);border-radius:var(--radius-lg);padding:32px;background:var(--white);">
         <div class="field-row"><label>Your name</label><input type="text" id="fb-name" placeholder="Name"></div>
-        <div class="field-row"><label>Your role</label><input type="text" id="fb-role" placeholder="e.g. Finance Manager, CFO, Recruiter"></div>
-        <div class="field-row"><label>Organisation</label><input type="text" id="fb-org" placeholder="Company / Organisation (optional)"></div>
+        <div class="field-row"><label>Your role</label><input type="text" id="fb-role" placeholder="e.g. Finance Manager, CFO, FP&A Analyst"></div>
         <div class="field-row"><label>Rating</label>
           <div class="star-select" id="star-row">
-            <button class="star-btn" onclick="setStars(1)">★</button>
-            <button class="star-btn" onclick="setStars(2)">★</button>
-            <button class="star-btn" onclick="setStars(3)">★</button>
-            <button class="star-btn" onclick="setStars(4)">★</button>
-            <button class="star-btn" onclick="setStars(5)">★</button>
+            <button class="star-btn" onclick="setStars(1)">&#9733;</button>
+            <button class="star-btn" onclick="setStars(2)">&#9733;</button>
+            <button class="star-btn" onclick="setStars(3)">&#9733;</button>
+            <button class="star-btn" onclick="setStars(4)">&#9733;</button>
+            <button class="star-btn" onclick="setStars(5)">&#9733;</button>
           </div>
         </div>
-        <div class="field-row"><label>Remark</label><textarea class="feedback-ta" id="fb-text" placeholder="Share your experience with the tool, suggestions, or any feedback for Rahul..."></textarea></div>
-        <button class="tbtn-gold tbtn" onclick="submitFeedback()" style="margin-top:4px;width:100%;">Submit Remark</button>
+        <div class="field-row"><label>Feedback</label><textarea class="feedback-ta" id="fb-text" placeholder="What worked well? What would you like to see added or changed?"></textarea></div>
+        <button class="tbtn-gold tbtn" onclick="submitFeedback()" style="margin-top:4px;width:100%;">Submit Feedback</button>
         <div class="feedback-success" id="fb-success">
-          <div class="feedback-success-icon">✓</div>
-          <div style="font-size:15px;font-weight:600;color:var(--navy);margin-bottom:4px;">Thank you!</div>
-          <div style="font-size:13px;color:var(--slate);">Your feedback has been noted.</div>
+          <div class="feedback-success-icon">&#10003;</div>
+          <div style="font-size:15px;font-weight:600;color:var(--navy);margin-bottom:4px;">Thanks for the feedback!</div>
+          <div style="font-size:13px;color:var(--slate);">It genuinely helps improve the tool.</div>
         </div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- CONTACT -->
-<section id="contact">
+<!-- BUILT BY -->
+<section id="about" style="background:var(--navy);padding:56px 40px;">
   <div class="section-inner">
-    <div class="section-eyebrow" style="color:var(--gold);">Get in touch</div>
-    <div class="section-title">Let's connect</div>
-    <div class="section-desc">Open to FP&A, finance leadership, and consulting opportunities. Reach out to discuss how this tool — or my broader skill set — can add value to your organisation.</div>
-    <div class="contact-layout">
-      <div>
-        <div class="contact-info-item">
-          <div class="contact-icon"><svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg></div>
-          <div><div class="contact-info-title">Email</div><div class="contact-info-val"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="10627178657c7b657d71627a78713e2127222950777d71797c3e737f7d">[email&#160;protected]</a></div></div>
-        </div>
-        <div class="contact-info-item">
-          <div class="contact-icon"><svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 3c1.93 0 3.5 1.57 3.5 3.5S13.93 13 12 13s-3.5-1.57-3.5-3.5S10.07 6 12 6zm7 13H5v-.23c0-.62.28-1.2.76-1.58C7.47 15.82 9.64 15 12 15s4.53.82 6.24 2.19c.48.38.76.97.76 1.58V19z"/></svg></div>
-          <div><div class="contact-info-title">LinkedIn</div><div class="contact-info-val">linkedin.com/in/rahul-kumar-jha-66a935231</div></div>
-        </div>
-        <div class="contact-info-item">
-          <div class="contact-icon"><svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg></div>
-          <div><div class="contact-info-title">Location</div><div class="contact-info-val">Jharkhand, India — open to relocation & hybrid</div></div>
-        </div>
-        <div style="margin-top:32px;padding:20px;background:rgba(201,168,76,0.1);border:1px solid rgba(201,168,76,0.2);border-radius:var(--radius-lg);">
-          <div style="font-size:12px;color:var(--gold);font-weight:600;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:8px;">Open to</div>
-          <div style="font-size:14px;color:rgba(255,255,255,0.7);line-height:1.8;">Finance Manager · FP&A · MIS &amp; Reporting · Group Consolidation · Financial Controller · Finance Transformation</div>
-        </div>
+    <div style="display:flex;align-items:center;gap:32px;flex-wrap:wrap;">
+      <div style="width:64px;height:64px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;font-family:'DM Serif Display',serif;font-size:22px;color:var(--navy);flex-shrink:0;">RKJ</div>
+      <div style="flex:1;min-width:220px;">
+        <div style="font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--gold);margin-bottom:6px;">Built by</div>
+        <div style="font-family:'DM Serif Display',serif;font-size:20px;color:var(--white);margin-bottom:4px;">Rahul Kumar Jha, CA</div>
+        <div style="font-size:13px;color:rgba(255,255,255,0.55);line-height:1.7;max-width:520px;">Chartered Accountant with 4 years of experience in FP&amp;A, MIS reporting, group consolidation and month-end close at Goldman Sachs and Jumbo Electronics. Built this tool to automate the parts of the close cycle that shouldn't need a human.</div>
       </div>
-      <div class="contact-form">
-        <div class="field-row"><label>Your name</label><input type="text" id="c-name" placeholder="Name"></div>
-        <div class="field-row"><label>Organisation</label><input type="text" id="c-org" placeholder="Company / Organisation"></div>
-        <div class="field-row"><label>Subject</label><select id="c-subject"><option>Job Opportunity</option><option>Consulting Enquiry</option><option>Tool Feedback</option><option>General</option></select></div>
-        <div class="field-row"><label>Message</label><textarea placeholder="Your message..." style="width:100%;padding:10px 12px;border:1px solid rgba(255,255,255,0.15);border-radius:var(--radius);background:rgba(255,255,255,0.08);color:white;font-size:13px;font-family:'DM Sans',sans-serif;resize:vertical;min-height:110px;" id="c-msg"></textarea></div>
-        <button class="tbtn-gold tbtn" onclick="submitContact()" style="width:100%;margin-top:4px;">Send Message</button>
-        <div id="c-success" class="contact-success"><div style="font-size:24px;color:var(--gold);margin-bottom:8px;">✓</div><div>Message sent — I'll be in touch shortly.</div></div>
+      <div style="display:flex;flex-direction:column;gap:10px;flex-shrink:0;">
+        <a href="https://linkedin.com/in/rahul-kumar-jha-66a935231" target="_blank" style="display:inline-flex;align-items:center;gap:8px;background:rgba(201,168,76,0.12);border:1px solid rgba(201,168,76,0.25);color:var(--gold);font-size:13px;font-weight:500;padding:9px 16px;border-radius:var(--radius);text-decoration:none;transition:background 0.2s;" onmouseover="this.style.background='rgba(201,168,76,0.22)'" onmouseout="this.style.background='rgba(201,168,76,0.12)'">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-9 14H7v-7h3v7zm-1.5-8.3c-1 0-1.7-.8-1.7-1.7S8.5 5.3 9.5 5.3s1.7.8 1.7 1.7-.7 1.7-1.7 1.7zm11.5 8.3h-3v-3.6c0-2.2-3-2-3 0V17h-3v-7h3v1.4c1.4-2.6 6-2.8 6 2.5V17z"/></svg>
+          Connect on LinkedIn
+        </a>
+        <a href="/cdn-cgi/l/email-protection#93e1f2fbe6fff8e6fef2e1f9fbf2bda2a4a1aad3f4fef2faffbdf0fcfe" style="display:inline-flex;align-items:center;gap:8px;background:transparent;border:1px solid rgba(255,255,255,0.15);color:rgba(255,255,255,0.6);font-size:13px;padding:9px 16px;border-radius:var(--radius);text-decoration:none;transition:border-color 0.2s;" onmouseover="this.style.borderColor='rgba(255,255,255,0.35)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.15)'">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+          <span class="__cf_email__" data-cfemail="2d5f4c4558414658404c5f47454c031c1a1f146d4a404c4441034e4240">[email&#160;protected]</span>
+        </a>
       </div>
     </div>
   </div>
 </section>
 
 <footer>
-  <div>Built by <span>Rahul Kumar Jha, CA</span> · MIS Report Generator · <span>2025</span></div>
+  <div>MIS Report Generator &middot; Built by <span>Rahul Kumar Jha, CA</span> &middot; Free for the finance community &middot; <span>2025</span></div>
 </footer>
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 // ─── STATE ───────────────────────────────────────────────────────
 let appData = [];
 let cols = { mtd: true, ytd: true, var: true, pct: true, contact: false };
@@ -725,12 +744,14 @@ function varCls(n) { return n>0?'pos':n<0?'neg':'neu'; }
 // ─── TAB SWITCHING ────────────────────────────────────────────────
 function switchTab(id) {
   document.querySelectorAll('.tool-tab').forEach((t,i)=>{
-    const ids=['data','report','charts','emails','settings'];
+    const ids=['data','report','charts','emails','bs','settings'];
     t.classList.toggle('active', ids[i]===id);
   });
   document.querySelectorAll('.tool-panel').forEach(p=>p.classList.remove('active'));
   document.getElementById('tp-'+id).classList.add('active');
   if(id==='charts' && appData.length) setTimeout(renderCharts,100);
+  if(id==='bs' && appData.length) renderBS();
+  if(id==='report' && appData.length) { renderPnL(); renderRatios(); }
 }
 
 function toggleMapper() {
@@ -784,6 +805,8 @@ function handleUpload(e) {
       if(!rows.length){alert('File appears empty.');return;}
 
       // ── Smart header detection ────────────────────────
+      // Scan up to first 10 rows to find the row that contains
+      // key column names — handles files with title/spacer rows at top
       const keyNames=['account','mtd actual','mtd budget','actual','budget'];
       let headerRowIdx=0;
       for(let i=0;i<Math.min(10,rows.length);i++){
@@ -819,12 +842,14 @@ function handleUpload(e) {
         return;
       }
 
+      // Data starts on row after header
       appData=rows.slice(headerRowIdx+1).map(r=>{
         const g=(i)=>i>=0?r[i]:'';
         const acct=String(g(iA)).trim();
+        // Skip section header rows (no numeric actual value)
         if(!acct||acct==='undefined')return null;
         const ma=parseFloat(g(iMA));
-        if(isNaN(ma)&&iMA>=0)return null;
+        if(isNaN(ma)&&iMA>=0)return null; // skip non-data rows like section headers
         return {
           a:acct,
           node:String(g(iN)||'Other').trim(),
@@ -877,24 +902,59 @@ function generateReport() {
   switchTab('report');
 }
 
+function getNodes(textareaId) {
+  const el=document.getElementById(textareaId);
+  if(!el) return [];
+  return el.value.split('\n').map(x=>x.trim().toLowerCase()).filter(x=>x);
+}
+function sumNode(nodeList, field='ma') {
+  return appData.filter(r=>nodeList.includes(r.node.toLowerCase())).reduce((s,r)=>s+r[field],0);
+}
 function updateMetrics() {
-  const rev=appData.filter(r=>r.node==='Revenue');
-  const nonRev=appData.filter(r=>r.node!=='Revenue'&&r.node!=='Tax');
-  const totalRevA=rev.reduce((s,r)=>s+r.ma,0);
-  const totalRevB=rev.reduce((s,r)=>s+r.mb,0);
-  const totalOpex=nonRev.reduce((s,r)=>s+r.ma,0);
-  const pbt=totalRevA-totalOpex;
-  const vp=totalRevB?(totalRevA-totalRevB)/totalRevB*100:0;
-  document.getElementById('m-rev').textContent=fmt(totalRevA);
-  document.getElementById('m-opex').textContent=fmt(totalOpex);
-  document.getElementById('m-pbt').textContent=fmt(pbt);
-  const mvar=document.getElementById('m-var');
-  mvar.textContent=fmtP(vp);
-  mvar.className='metric-val '+(vp>=0?'pos':'neg');
+  const revNodes=getNodes('pnl-revenue');
+  const dirNodes=getNodes('pnl-direct');
+  const ohNodes=getNodes('pnl-overhead');
+  const depNodes=getNodes('pnl-depn');
+  const finNodes=getNodes('pnl-finance');
+  const taxNodes=getNodes('pnl-tax');
+  const revA=sumNode(revNodes,'ma'), revB=sumNode(revNodes,'mb');
+  const dirA=sumNode(dirNodes,'ma');
+  const ohA=sumNode(ohNodes,'ma');
+  const depA=sumNode(depNodes,'ma');
+  const finA=sumNode(finNodes,'ma');
+  const taxA=sumNode(taxNodes,'ma');
+  const gpA=revA-dirA;
+  const ebitdaA=gpA-ohA;
+  const ebitA=ebitdaA-depA;
+  const pbtA=ebitA-finA;
+  const patA=pbtA-taxA;
+  const vp=revB?(revA-revB)/revB*100:0;
+  document.getElementById('m-rev').textContent=fmt(revA);
+  const gp=document.getElementById('m-gp');
+  if(gp){gp.textContent=fmt(gpA);gp.className='metric-val '+(gpA>=0?'pos':'neg');}
+  const eb=document.getElementById('m-ebitda');
+  if(eb){eb.textContent=fmt(ebitdaA);eb.className='metric-val '+(ebitdaA>=0?'pos':'neg');}
+  const pb=document.getElementById('m-pbt');
+  if(pb){pb.textContent=fmt(pbtA);pb.className='metric-val '+(pbtA>=0?'pos':'neg');}
+  const pa=document.getElementById('m-pat');
+  if(pa){pa.textContent=fmt(patA);pa.className='metric-val '+(patA>=0?'pos':'neg');}
+  const mv=document.getElementById('m-var');
+  if(mv){mv.textContent=fmtP(vp);mv.className='metric-val '+(vp>=0?'pos':'neg');}
 }
 
 function togCol(el,c) { cols[c]=!cols[c]; el.classList.toggle('on',cols[c]); renderMIS(); }
 
+let expandedNodes={};
+function toggleNode(node) {
+  expandedNodes[node]=!expandedNodes[node];
+  renderMIS();
+}
+function toggleAllNodes() {
+  const nodes=[...new Set(appData.map(r=>r.node))];
+  const anyOpen=nodes.some(n=>expandedNodes[n]);
+  nodes.forEach(n=>expandedNodes[n]=!anyOpen);
+  renderMIS();
+}
 function renderMIS() {
   if(!appData.length) return;
   const nodes=[...new Set(appData.map(r=>r.node))];
@@ -914,7 +974,10 @@ function renderMIS() {
     const tma=items.reduce((s,r)=>s+r.ma,0),tmb=items.reduce((s,r)=>s+r.mb,0);
     const tya=items.reduce((s,r)=>s+r.ya,0),tyb=items.reduce((s,r)=>s+r.yb,0);
     const mv=tma-tmb,yv=tya-tyb,mp=tmb?mv/tmb*100:0,yp=tyb?yv/tyb*100:0;
-    tbody+=`<tr class="node-header"><td>${node}</td>`;
+    const isExp=!!expandedNodes[node];
+    const arrow=isExp?'▼':'▶';
+    tbody+=`<tr class="node-header" style="cursor:pointer;" onclick="toggleNode('${node.replace(/'/g,"\\'")}')">`;
+    tbody+=`<td><span style="font-size:10px;margin-right:6px;color:var(--gold);">${arrow}</span>${node}</td>`;
     if(cols.mtd){tbody+=`<td>${fmt(tma)}</td><td>${fmt(tmb)}</td>`;}
     if(cols.var&&cols.mtd){tbody+=`<td class="${varCls(mv)}">${fmt(mv)}</td>`;}
     if(cols.pct&&cols.mtd){tbody+=`<td class="${varCls(mp)}">${fmtP(mp)}</td>`;}
@@ -923,18 +986,20 @@ function renderMIS() {
     if(cols.pct&&cols.ytd){tbody+=`<td class="${varCls(yp)}">${fmtP(yp)}</td>`;}
     if(cols.contact){tbody+='<td></td>';}
     tbody+='</tr>';
-    items.forEach(r=>{
-      const mv2=r.ma-r.mb,yv2=r.ya-r.yb,mp2=r.mb?mv2/r.mb*100:0,yp2=r.yb?yv2/r.yb*100:0;
-      tbody+=`<tr><td style="padding-left:24px;font-size:12px;color:var(--slate);">${r.a}</td>`;
-      if(cols.mtd){tbody+=`<td style="font-size:12px;">${fmt(r.ma)}</td><td style="font-size:12px;">${fmt(r.mb)}</td>`;}
-      if(cols.var&&cols.mtd){tbody+=`<td style="font-size:12px;" class="${varCls(mv2)}">${fmt(mv2)}</td>`;}
-      if(cols.pct&&cols.mtd){tbody+=`<td style="font-size:12px;" class="${varCls(mp2)}">${fmtP(mp2)}</td>`;}
-      if(cols.ytd){tbody+=`<td style="font-size:12px;">${fmt(r.ya)}</td><td style="font-size:12px;">${fmt(r.yb)}</td>`;}
-      if(cols.var&&cols.ytd){tbody+=`<td style="font-size:12px;" class="${varCls(yv2)}">${fmt(yv2)}</td>`;}
-      if(cols.pct&&cols.ytd){tbody+=`<td style="font-size:12px;" class="${varCls(yp2)}">${fmtP(yp2)}</td>`;}
-      if(cols.contact){tbody+=`<td style="font-size:11px;color:var(--slate-light);">${r.cn}</td>`;}
-      tbody+='</tr>';
-    });
+    if(isExp){
+      items.forEach(r=>{
+        const mv2=r.ma-r.mb,yv2=r.ya-r.yb,mp2=r.mb?mv2/r.mb*100:0,yp2=r.yb?yv2/r.yb*100:0;
+        tbody+=`<tr style="background:#fafcff;"><td style="padding-left:28px;font-size:12px;color:var(--slate);">↳ ${r.a}</td>`;
+        if(cols.mtd){tbody+=`<td style="font-size:12px;">${fmt(r.ma)}</td><td style="font-size:12px;">${fmt(r.mb)}</td>`;}
+        if(cols.var&&cols.mtd){tbody+=`<td style="font-size:12px;" class="${varCls(mv2)}">${fmt(mv2)}</td>`;}
+        if(cols.pct&&cols.mtd){tbody+=`<td style="font-size:12px;" class="${varCls(mp2)}">${fmtP(mp2)}</td>`;}
+        if(cols.ytd){tbody+=`<td style="font-size:12px;">${fmt(r.ya)}</td><td style="font-size:12px;">${fmt(r.yb)}</td>`;}
+        if(cols.var&&cols.ytd){tbody+=`<td style="font-size:12px;" class="${varCls(yv2)}">${fmt(yv2)}</td>`;}
+        if(cols.pct&&cols.ytd){tbody+=`<td style="font-size:12px;" class="${varCls(yp2)}">${fmtP(yp2)}</td>`;}
+        if(cols.contact){tbody+=`<td style="font-size:11px;color:var(--slate-light);">${r.cn}</td>`;}
+        tbody+='</tr>';
+      });
+    }
   });
 
   const gma=appData.reduce((s,r)=>s+r.ma,0),gmb=appData.reduce((s,r)=>s+r.mb,0);
@@ -1134,6 +1199,200 @@ function renderContactMap() {
   ).join('');
 }
 
+// ─── P&L SUMMARY ─────────────────────────────────────────────────
+function renderPnL() {
+  if(!appData.length) return;
+  const revN=getNodes('pnl-revenue'), dirN=getNodes('pnl-direct');
+  const ohN=getNodes('pnl-overhead'), depN=getNodes('pnl-depn');
+  const finN=getNodes('pnl-finance'), taxN=getNodes('pnl-tax');
+  const s=(nodes,f)=>sumNode(nodes,f);
+  const row=(label,ma,mb,ya,yb,bold,indent)=>{
+    const mv=ma-mb, yv=ya-yb;
+    const mp=mb?mv/mb*100:0, yp=yb?yv/yb*100:0;
+    const pct=ma&&(ma-mb)?`<td style="font-size:11px;" class="${varCls(mp)}">${fmtP(mp)}</td>`:'<td></td>';
+    const ypct=ya&&(ya-yb)?`<td style="font-size:11px;" class="${varCls(yp)}">${fmtP(yp)}</td>`:'<td></td>';
+    const st=bold?'font-weight:600;background:#f1f5fb;':'';
+    const pl=indent?'padding-left:20px;font-size:12px;':'';
+    return `<tr style="${st}"><td style="${pl}">${label}</td>
+      <td>${fmt(ma)}</td><td>${fmt(mb)}</td>
+      <td class="${varCls(mv)}">${fmt(mv)}</td>${pct}
+      <td>${fmt(ya)}</td><td>${fmt(yb)}</td>
+      <td class="${varCls(yv)}">${fmt(yv)}</td>${ypct}</tr>`;
+  };
+  const pctRow=(label,val,base)=>{
+    const p=base?val/base*100:0;
+    return `<tr style="background:#fafcff;font-size:11px;color:var(--slate-light);"><td style="padding-left:20px;">${label}</td><td colspan="7">${p.toFixed(1)}%</td></tr>`;
+  };
+  const revA=s(revN,'ma'), revB=s(revN,'mb'), revYA=s(revN,'ya'), revYB=s(revN,'yb');
+  const dirA=s(dirN,'ma'), dirB=s(dirN,'mb'), dirYA=s(dirN,'ya'), dirYB=s(dirN,'yb');
+  const ohA=s(ohN,'ma'), ohB=s(ohN,'mb'), ohYA=s(ohN,'ya'), ohYB=s(ohN,'yb');
+  const depA=s(depN,'ma'), depB=s(depN,'mb'), depYA=s(depN,'ya'), depYB=s(depN,'yb');
+  const finA=s(finN,'ma'), finB=s(finN,'mb'), finYA=s(finN,'ya'), finYB=s(finN,'yb');
+  const taxA=s(taxN,'ma'), taxB=s(taxN,'mb'), taxYA=s(taxN,'ya'), taxYB=s(taxN,'yb');
+  const gpA=revA-dirA, gpB=revB-dirB, gpYA=revYA-dirYA, gpYB=revYB-dirYB;
+  const ebitdaA=gpA-ohA, ebitdaB=gpB-ohB, ebitdaYA=gpYA-ohYA, ebitdaYB=gpYB-ohYB;
+  const ebitA=ebitdaA-depA, ebitB=ebitdaB-depB, ebitYA=ebitdaYA-depYA, ebitYB=ebitdaYB-depYB;
+  const pbtA=ebitA-finA, pbtB=ebitB-finB, pbtYA=ebitYA-finYA, pbtYB=ebitYB-finYB;
+  const patA=pbtA-taxA, patB=pbtB-taxB, patYA=pbtYA-taxYA, patYB=pbtYB-taxYB;
+  const taxRateA=pbtA?taxA/pbtA*100:0;
+  const showGP=document.getElementById('tog-gp')?.classList.contains('on');
+  const showEBITDA=document.getElementById('tog-ebitda')?.classList.contains('on');
+  const showEBIT=document.getElementById('tog-ebit')?.classList.contains('on');
+  const showPBT=document.getElementById('tog-pbt')?.classList.contains('on');
+  const showPAT=document.getElementById('tog-pat')?.classList.contains('on');
+  const showTR=document.getElementById('tog-taxrate')?.classList.contains('on');
+  let rows=`<thead><tr>
+    <th style="min-width:160px;">Line Item</th>
+    <th>MTD Actual</th><th>MTD Budget</th><th>MTD Var</th><th>MTD Var%</th>
+    <th>YTD Actual</th><th>YTD Budget</th><th>YTD Var</th><th>YTD Var%</th>
+  </tr></thead><tbody>`;
+  rows+=row('Revenue',revA,revB,revYA,revYB,true,false);
+  rows+=row('Less: Direct Costs',dirA,dirB,dirYA,dirYB,false,true);
+  if(showGP){
+    rows+=row('Gross Profit',gpA,gpB,gpYA,gpYB,true,false);
+    rows+=pctRow('GP Margin',gpA,revA);
+  }
+  rows+=row('Less: Overheads',ohA,ohB,ohYA,ohYB,false,true);
+  if(showEBITDA){
+    rows+=row('EBITDA',ebitdaA,ebitdaB,ebitdaYA,ebitdaYB,true,false);
+    rows+=pctRow('EBITDA Margin',ebitdaA,revA);
+  }
+  rows+=row('Less: Depreciation',depA,depB,depYA,depYB,false,true);
+  if(showEBIT){
+    rows+=row('EBIT',ebitA,ebitB,ebitYA,ebitYB,true,false);
+    rows+=pctRow('EBIT Margin',ebitA,revA);
+  }
+  rows+=row('Less: Finance Costs',finA,finB,finYA,finYB,false,true);
+  if(showPBT){
+    rows+=row('PBT',pbtA,pbtB,pbtYA,pbtYB,true,false);
+    rows+=pctRow('PBT Margin',pbtA,revA);
+  }
+  rows+=row('Less: Tax',taxA,taxB,taxYA,taxYB,false,true);
+  if(showTR) rows+=`<tr style="font-size:11px;color:var(--slate-light);background:#fafcff;"><td style="padding-left:20px;">Effective Tax Rate</td><td colspan="7">${taxRateA.toFixed(1)}%</td></tr>`;
+  if(showPAT){
+    rows+=row('PAT (Net Profit)',patA,patB,patYA,patYB,true,false);
+    rows+=pctRow('PAT Margin',patA,revA);
+  }
+  rows+='</tbody>';
+  document.getElementById('pnl-section').style.display='block';
+  document.getElementById('pnl-wrap').innerHTML=`<table>${rows}</table>`;
+}
+
+// ─── FINANCIAL RATIOS ─────────────────────────────────────────────
+function renderRatios() {
+  if(!appData.length) return;
+  const revN=getNodes('pnl-revenue'), dirN=getNodes('pnl-direct');
+  const ohN=getNodes('pnl-overhead'), depN=getNodes('pnl-depn');
+  const finN=getNodes('pnl-finance'), taxN=getNodes('pnl-tax');
+  const caN=getNodes('bs-ca'), clN=getNodes('bs-cl');
+  const ncaN=getNodes('bs-nca'), nclN=getNodes('bs-ncl'), eqN=getNodes('bs-eq');
+  const bsNclN=getNodes('bs-ncl');
+  const s=(nodes,f='ma')=>sumNode(nodes,f);
+  const revA=s(revN), dirA=s(dirN), ohA=s(ohN), depA=s(depN), finA=s(finN), taxA=s(taxN);
+  const gpA=revA-dirA, ebitdaA=gpA-ohA, ebitA=ebitdaA-depA, pbtA=ebitA-finA, patA=pbtA-taxA;
+  const caA=s(caN), clA=s(clN), ncaA=s(ncaN), nclA=s(nclN), eqA=s(eqN);
+  const debt=nclA+clA;
+  const ratios=[];
+  if(document.getElementById('tog-gp')?.classList.contains('on'))
+    ratios.push({l:'GP Margin',v:revA?(gpA/revA*100).toFixed(1)+'%':'N/A'});
+  if(document.getElementById('tog-ebitda')?.classList.contains('on'))
+    ratios.push({l:'EBITDA Margin',v:revA?(ebitdaA/revA*100).toFixed(1)+'%':'N/A'});
+  if(document.getElementById('tog-ebit')?.classList.contains('on'))
+    ratios.push({l:'EBIT Margin',v:revA?(ebitA/revA*100).toFixed(1)+'%':'N/A'});
+  if(document.getElementById('tog-pbt')?.classList.contains('on'))
+    ratios.push({l:'PBT Margin',v:revA?(pbtA/revA*100).toFixed(1)+'%':'N/A'});
+  if(document.getElementById('tog-pat')?.classList.contains('on'))
+    ratios.push({l:'PAT Margin',v:revA?(patA/revA*100).toFixed(1)+'%':'N/A'});
+  if(document.getElementById('tog-taxrate')?.classList.contains('on'))
+    ratios.push({l:'Eff. Tax Rate',v:pbtA?(taxA/pbtA*100).toFixed(1)+'%':'N/A'});
+  if(document.getElementById('tog-cr')?.classList.contains('on'))
+    ratios.push({l:'Current Ratio',v:clA?(caA/clA).toFixed(2)+'x':'N/A'});
+  if(document.getElementById('tog-qr')?.classList.contains('on'))
+    ratios.push({l:'Quick Ratio',v:clA?((caA*0.7)/clA).toFixed(2)+'x':'N/A'});
+  if(document.getElementById('tog-wc')?.classList.contains('on'))
+    ratios.push({l:'Working Capital',v:fmt(caA-clA)});
+  if(document.getElementById('tog-de')?.classList.contains('on'))
+    ratios.push({l:'Debt / Equity',v:eqA?(debt/eqA).toFixed(2)+'x':'N/A'});
+  if(document.getElementById('tog-ic')?.classList.contains('on'))
+    ratios.push({l:'Interest Coverage',v:finA?(ebitA/finA).toFixed(2)+'x':'N/A'});
+  if(document.getElementById('tog-debitda')?.classList.contains('on'))
+    ratios.push({l:'Debt / EBITDA',v:ebitdaA?(debt/ebitdaA).toFixed(2)+'x':'N/A'});
+  if(!ratios.length){document.getElementById('ratios-section').style.display='none';return;}
+  document.getElementById('ratios-section').style.display='block';
+  document.getElementById('ratios-wrap').innerHTML=ratios.map(r=>
+    `<div class="metric-card"><div class="metric-val" style="font-size:18px;">${r.v}</div><div class="metric-lbl">${r.l}</div></div>`
+  ).join('');
+}
+
+// ─── BALANCE SHEET ────────────────────────────────────────────────
+function renderBS() {
+  if(!appData.length) return;
+  const period=document.getElementById('s-period')?.value||'—';
+  document.getElementById('bs-period-lbl').textContent=period;
+  const ncaN=getNodes('bs-nca'), caN=getNodes('bs-ca');
+  const clN=getNodes('bs-cl'), nclN=getNodes('bs-ncl'), eqN=getNodes('bs-eq');
+  const s=(nodes,f='ma')=>sumNode(nodes,f);
+  const ncaA=s(ncaN), caA=s(caN);
+  const clA=s(clN), nclA=s(nclN), eqA=s(eqN);
+  const totalAssets=ncaA+caA;
+  const totalLiabEq=nclA+clA+eqA;
+  const bsRow=(label,val,bold,indent)=>{
+    const st=bold?'font-weight:600;background:#f1f5fb;':'';
+    const pl=indent?'padding-left:20px;font-size:12px;':'';
+    return `<tr style="${st}"><td style="${pl}">${label}</td><td style="text-align:right;">${fmt(val)}</td></tr>`;
+  };
+  // Assets side
+  let assetRows=`<thead><tr><th>Assets</th><th style="text-align:right;">MTD Actual</th></tr></thead><tbody>`;
+  assetRows+=bsRow('Non-current Assets',ncaA,true,false);
+  getNodes('bs-nca').forEach(n=>{
+    const v=sumNode([n]);
+    if(v!==0) assetRows+=bsRow(n.charAt(0).toUpperCase()+n.slice(1),v,false,true);
+  });
+  assetRows+=bsRow('Current Assets',caA,true,false);
+  getNodes('bs-ca').forEach(n=>{
+    const v=sumNode([n]);
+    if(v!==0) assetRows+=bsRow(n.charAt(0).toUpperCase()+n.slice(1),v,false,true);
+  });
+  assetRows+=`<tr style="font-weight:600;background:var(--navy);color:white;"><td>Total Assets</td><td style="text-align:right;">${fmt(totalAssets)}</td></tr>`;
+  assetRows+='</tbody>';
+  // Liabilities side
+  let liabRows=`<thead><tr><th>Liabilities & Equity</th><th style="text-align:right;">MTD Actual</th></tr></thead><tbody>`;
+  liabRows+=bsRow('Non-current Liabilities',nclA,true,false);
+  getNodes('bs-ncl').forEach(n=>{
+    const v=sumNode([n]);
+    if(v!==0) liabRows+=bsRow(n.charAt(0).toUpperCase()+n.slice(1),v,false,true);
+  });
+  liabRows+=bsRow('Current Liabilities',clA,true,false);
+  getNodes('bs-cl').forEach(n=>{
+    const v=sumNode([n]);
+    if(v!==0) liabRows+=bsRow(n.charAt(0).toUpperCase()+n.slice(1),v,false,true);
+  });
+  liabRows+=bsRow('Equity & Reserves',eqA,true,false);
+  getNodes('bs-eq').forEach(n=>{
+    const v=sumNode([n]);
+    if(v!==0) liabRows+=bsRow(n.charAt(0).toUpperCase()+n.slice(1),v,false,true);
+  });
+  liabRows+=`<tr style="font-weight:600;background:var(--gold);color:var(--navy);"><td>Total Liabilities & Equity</td><td style="text-align:right;">${fmt(totalLiabEq)}</td></tr>`;
+  liabRows+='</tbody>';
+  document.getElementById('bs-assets-wrap').innerHTML=`<table>${assetRows}</table>`;
+  document.getElementById('bs-liab-wrap').innerHTML=`<table>${liabRows}</table>`;
+  // Balance check
+  const chk=document.getElementById('bs-check');
+  const diff=Math.abs(totalAssets-totalLiabEq);
+  chk.style.display='block';
+  if(diff<1){
+    chk.style.background='#f0faf5';chk.style.border='1px solid #1a7a4a';chk.style.color='#1a7a4a';
+    chk.textContent='✓ Balance Sheet balances — Assets = Liabilities & Equity ('+fmt(totalAssets)+')';
+  } else {
+    chk.style.background='#fdf2f2';chk.style.border='1px solid #c0392b';chk.style.color='#c0392b';
+    chk.textContent='⚠ Out of balance by '+fmt(diff)+' — check that all BS nodes are mapped in Settings';
+  }
+  document.getElementById('bs-alert').style.display=
+    appData.filter(r=>![...ncaN,...caN,...clN,...nclN,...eqN].includes(r.node.toLowerCase())).length?'block':'none';
+  document.getElementById('bs-alert').textContent=
+    'Some nodes are not mapped to Balance Sheet sections. Check Settings → Balance Sheet classification.';
+}
+
 // ─── EXPORT ──────────────────────────────────────────────────────
 function downloadTemplate() {
   const wb=XLSX.utils.book_new();
@@ -1160,39 +1419,103 @@ function exportExcel() {
   const c=cur(), s=scale();
   const nodes=[...new Set(appData.map(r=>r.node))];
   const wb=XLSX.utils.book_new();
+  const fmtV=n=>+(n/s).toFixed(1);
+  const fmtPct=n=>n?+(n*100).toFixed(1):0;
 
-  // MIS Sheet
+  // ── Sheet 1: MIS Report ──────────────────────────────────────
   const misRows=[];
-  misRows.push([company+' — MIS Report — '+period]);
+  misRows.push([company+' — MIS Report','','','','','Period: '+period,'','','','','','']);
+  misRows.push(['[LOGO]','','','','','','','','','','','']);
   misRows.push([]);
-  misRows.push(['Account','Node','MTD Actual','MTD Budget','MTD Variance','MTD Var %','YTD Actual','YTD Budget','YTD Variance','YTD Var %','Contact','Email']);
+  misRows.push(['Account','Node','MTD Actual','MTD Budget','MTD Variance','MTD Var%','YTD Actual','YTD Budget','YTD Variance','YTD Var%','Contact','Email']);
   nodes.forEach(node=>{
     const items=appData.filter(r=>r.node===node);
-    const tma=items.reduce((s,r)=>s+r.ma,0),tmb=items.reduce((s,r)=>s+r.mb,0);
-    const tya=items.reduce((s,r)=>s+r.ya,0),tyb=items.reduce((s,r)=>s+r.yb,0);
-    const mv=tma-tmb,yv=tya-tyb,mp=tmb?mv/tmb*100:0,yp=tyb?yv/tyb*100:0;
-    misRows.push([node,'',+(tma/s).toFixed(1),+(tmb/s).toFixed(1),+(mv/s).toFixed(1),+mp.toFixed(1)+'%',+(tya/s).toFixed(1),+(tyb/s).toFixed(1),+(yv/s).toFixed(1),+yp.toFixed(1)+'%','','']);
+    const tma=items.reduce((sum,r)=>sum+r.ma,0),tmb=items.reduce((sum,r)=>sum+r.mb,0);
+    const tya=items.reduce((sum,r)=>sum+r.ya,0),tyb=items.reduce((sum,r)=>sum+r.yb,0);
+    const mv=tma-tmb,yv=tya-tyb;
+    const mp=tmb?mv/tmb*100:0,yp=tyb?yv/tyb*100:0;
+    misRows.push([node,'SUBTOTAL',fmtV(tma),fmtV(tmb),fmtV(mv),+(mp.toFixed(1)),fmtV(tya),fmtV(tyb),fmtV(yv),+(yp.toFixed(1)),'','']);
     items.forEach(r=>{
-      const mv2=r.ma-r.mb,yv2=r.ya-r.yb,mp2=r.mb?mv2/r.mb*100:0,yp2=r.yb?yv2/r.yb*100:0;
-      misRows.push([r.a,r.node,+(r.ma/s).toFixed(1),+(r.mb/s).toFixed(1),+(mv2/s).toFixed(1),+mp2.toFixed(1)+'%',+(r.ya/s).toFixed(1),+(r.yb/s).toFixed(1),+(yv2/s).toFixed(1),+yp2.toFixed(1)+'%',r.cn,r.ce]);
+      const mv2=r.ma-r.mb,yv2=r.ya-r.yb;
+      const mp2=r.mb?mv2/r.mb*100:0,yp2=r.yb?yv2/r.yb*100:0;
+      misRows.push(['  '+r.a,r.node,fmtV(r.ma),fmtV(r.mb),fmtV(mv2),+(mp2.toFixed(1)),fmtV(r.ya),fmtV(r.yb),fmtV(yv2),+(yp2.toFixed(1)),r.cn,r.ce]);
     });
   });
   const gma=appData.reduce((s,r)=>s+r.ma,0),gmb=appData.reduce((s,r)=>s+r.mb,0);
   const gya=appData.reduce((s,r)=>s+r.ya,0),gyb=appData.reduce((s,r)=>s+r.yb,0);
-  const gmv=gma-gmb,gyv=gya-gyb,gmp=gmb?gmv/gmb*100:0,gyp=gyb?gyv/gyb*100:0;
-  misRows.push(['GRAND TOTAL','',+(gma/s).toFixed(1),+(gmb/s).toFixed(1),+(gmv/s).toFixed(1),+gmp.toFixed(1)+'%',+(gya/s).toFixed(1),+(gyb/s).toFixed(1),+(gyv/s).toFixed(1),+gyp.toFixed(1)+'%','','']);
-  const ws=XLSX.utils.aoa_to_sheet(misRows);
-  ws['!cols']=[{wch:24},{wch:16},{wch:14},{wch:14},{wch:14},{wch:10},{wch:14},{wch:14},{wch:14},{wch:10},{wch:18},{wch:26}];
-  XLSX.utils.book_append_sheet(wb,ws,'MIS Report');
+  misRows.push(['GRAND TOTAL','',fmtV(gma),fmtV(gmb),fmtV(gma-gmb),+(((gma-gmb)/gmb*100).toFixed(1)),fmtV(gya),fmtV(gyb),fmtV(gya-gyb),+(((gya-gyb)/gyb*100).toFixed(1)),'','']);
+  const wsMIS=XLSX.utils.aoa_to_sheet(misRows);
+  wsMIS['!cols']=[{wch:28},{wch:18},{wch:14},{wch:14},{wch:14},{wch:10},{wch:14},{wch:14},{wch:14},{wch:10},{wch:20},{wch:28}];
+  wsMIS['!freeze']={xSplit:1,ySplit:4};
+  XLSX.utils.book_append_sheet(wb,wsMIS,'MIS Report');
 
-  // Raw data sheet
-  const rawRows=[['Account','Node','MTD Actual','MTD Budget','MTD Variance','MTD Var%','YTD Actual','YTD Budget','YTD Variance','YTD Var%','Contact Name','Contact Email']];
-  appData.forEach(r=>{
-    const mv=r.ma-r.mb,mp=r.mb?mv/r.mb*100:0,yv=r.ya-r.yb,yp=r.yb?yv/r.yb*100:0;
-    rawRows.push([r.a,r.node,r.ma,r.mb,mv,+mp.toFixed(2),r.ya,r.yb,yv,+yp.toFixed(2),r.cn,r.ce]);
-  });
-  const ws2=XLSX.utils.aoa_to_sheet(rawRows);
-  XLSX.utils.book_append_sheet(wb,ws2,'Raw Data');
+  // ── Sheet 2: P&L Summary ─────────────────────────────────────
+  const revN=getNodes('pnl-revenue'), dirN=getNodes('pnl-direct');
+  const ohN=getNodes('pnl-overhead'), depN=getNodes('pnl-depn');
+  const finN=getNodes('pnl-finance'), taxN=getNodes('pnl-tax');
+  const sm=(nodes,f)=>sumNode(nodes,f);
+  const revA=sm(revN,'ma'),revB=sm(revN,'mb'),revYA=sm(revN,'ya'),revYB=sm(revN,'yb');
+  const dirA=sm(dirN,'ma'),dirB=sm(dirN,'mb'),dirYA=sm(dirN,'ya'),dirYB=sm(dirN,'yb');
+  const ohA=sm(ohN,'ma'),ohB=sm(ohN,'mb'),ohYA=sm(ohN,'ya'),ohYB=sm(ohN,'yb');
+  const depA=sm(depN,'ma'),depB=sm(depN,'mb'),depYA=sm(depN,'ya'),depYB=sm(depN,'yb');
+  const finA=sm(finN,'ma'),finB=sm(finN,'mb'),finYA=sm(finN,'ya'),finYB=sm(finN,'yb');
+  const taxA=sm(taxN,'ma'),taxB=sm(taxN,'mb'),taxYA=sm(taxN,'ya'),taxYB=sm(taxN,'yb');
+  const gpA=revA-dirA,gpB=revB-dirB,gpYA=revYA-dirYA,gpYB=revYB-dirYB;
+  const ebitdaA=gpA-ohA,ebitdaB=gpB-ohB,ebitdaYA=gpYA-ohYA,ebitdaYB=gpYB-ohYB;
+  const ebitA=ebitdaA-depA,ebitB=ebitdaB-depB,ebitYA=ebitdaYA-depYA,ebitYB=ebitdaYB-depYB;
+  const pbtA=ebitA-finA,pbtB=ebitB-finB,pbtYA=ebitYA-finYA,pbtYB=ebitYB-finYB;
+  const patA=pbtA-taxA,patB=pbtB-taxB,patYA=pbtYA-taxYA,patYB=pbtYB-taxYB;
+  const pnlRows=[];
+  pnlRows.push([company+' — P&L Summary','','','','Period: '+period,'','','']);
+  pnlRows.push([]);
+  pnlRows.push(['Line Item','MTD Actual','MTD Budget','MTD Variance','MTD Var%','YTD Actual','YTD Budget','YTD Variance','YTD Var%']);
+  const addPnL=(label,ma,mb,ya,yb)=>{
+    const mv=ma-mb,yv=ya-yb,mp=mb?mv/mb*100:0,yp=yb?yv/yb*100:0;
+    pnlRows.push([label,fmtV(ma),fmtV(mb),fmtV(mv),+(mp.toFixed(1)),fmtV(ya),fmtV(yb),fmtV(yv),+(yp.toFixed(1))]);
+  };
+  const addPct=(label,val,base)=>pnlRows.push([label+'',revA?+(val/base*100).toFixed(1)+'%':'N/A','','','','','','','']);
+  addPnL('Revenue',revA,revB,revYA,revYB);
+  addPnL('Less: Direct Costs',dirA,dirB,dirYA,dirYB);
+  addPnL('Gross Profit',gpA,gpB,gpYA,gpYB);
+  addPct('  GP Margin',gpA,revA);
+  addPnL('Less: Overheads',ohA,ohB,ohYA,ohYB);
+  addPnL('EBITDA',ebitdaA,ebitdaB,ebitdaYA,ebitdaYB);
+  addPct('  EBITDA Margin',ebitdaA,revA);
+  addPnL('Less: Depreciation & Amortisation',depA,depB,depYA,depYB);
+  addPnL('EBIT',ebitA,ebitB,ebitYA,ebitYB);
+  addPct('  EBIT Margin',ebitA,revA);
+  addPnL('Less: Finance Costs',finA,finB,finYA,finYB);
+  addPnL('PBT (Profit Before Tax)',pbtA,pbtB,pbtYA,pbtYB);
+  addPct('  PBT Margin',pbtA,revA);
+  pnlRows.push(['  Effective Tax Rate',pbtA?(taxA/pbtA*100).toFixed(1)+'%':'N/A','','','','','','','']);
+  addPnL('Less: Tax',taxA,taxB,taxYA,taxYB);
+  addPnL('PAT (Net Profit)',patA,patB,patYA,patYB);
+  addPct('  PAT Margin',patA,revA);
+  const wsPnL=XLSX.utils.aoa_to_sheet(pnlRows);
+  wsPnL['!cols']=[{wch:32},{wch:14},{wch:14},{wch:14},{wch:10},{wch:14},{wch:14},{wch:14},{wch:10}];
+  XLSX.utils.book_append_sheet(wb,wsPnL,'P&L Summary');
+
+  // ── Sheet 3: Balance Sheet ────────────────────────────────────
+  const ncaN=getNodes('bs-nca'),caN=getNodes('bs-ca'),clN=getNodes('bs-cl');
+  const nclN=getNodes('bs-ncl'),eqN=getNodes('bs-eq');
+  const ncaA=sumNode(ncaN),caA=sumNode(caN),clA=sumNode(clN),nclA=sumNode(nclN),eqA=sumNode(eqN);
+  const bsRows=[];
+  bsRows.push([company+' — Balance Sheet','','Period: '+period,'']);
+  bsRows.push([]);
+  bsRows.push(['ASSETS','Amount ('+c+')','LIABILITIES & EQUITY','Amount ('+c+')']);
+  bsRows.push(['Non-current Assets',fmtV(ncaA),'Non-current Liabilities',fmtV(nclA)]);
+  ncaN.forEach(n=>{const v=sumNode([n]);if(v!==0)bsRows.push(['  '+n.charAt(0).toUpperCase()+n.slice(1),fmtV(v),'','']);});
+  bsRows.push(['Current Assets',fmtV(caA),'Current Liabilities',fmtV(clA)]);
+  caN.forEach(n=>{const v=sumNode([n]);if(v!==0)bsRows.push(['  '+n.charAt(0).toUpperCase()+n.slice(1),fmtV(v),'','']);});
+  bsRows.push(['','','Equity & Reserves',fmtV(eqA)]);
+  eqN.forEach(n=>{const v=sumNode([n]);if(v!==0)bsRows.push(['','','  '+n.charAt(0).toUpperCase()+n.slice(1),fmtV(v)]);});
+  bsRows.push(['TOTAL ASSETS',fmtV(ncaA+caA),'TOTAL LIABILITIES & EQUITY',fmtV(nclA+clA+eqA)]);
+  const diff=Math.abs((ncaA+caA)-(nclA+clA+eqA));
+  bsRows.push([]);
+  bsRows.push(['Balance check',diff<1?'✓ Balanced':'⚠ Difference: '+fmtV(diff),'','']);
+  const wsBS=XLSX.utils.aoa_to_sheet(bsRows);
+  wsBS['!cols']=[{wch:30},{wch:16},{wch:30},{wch:16}];
+  XLSX.utils.book_append_sheet(wb,wsBS,'Balance Sheet');
 
   XLSX.writeFile(wb,`MIS_${period}.xlsx`);
 }
@@ -1338,19 +1661,7 @@ function submitFeedback() {
   starRating=0;
   const s=document.getElementById('fb-success');
   s.style.display='block';
-  setTimeout(()=>s.style.display='none',3500);
-}
-
-// ─── CONTACT FORM ─────────────────────────────────────────────────
-function submitContact() {
-  const name=document.getElementById('c-name').value.trim();
-  const msg=document.getElementById('c-msg').value.trim();
-  if(!name||!msg){alert('Please fill in your name and message.');return;}
-  document.getElementById('c-name').value='';
-  document.getElementById('c-org').value='';
-  document.getElementById('c-msg').value='';
-  const s=document.getElementById('c-success');
-  s.style.display='block';
+  setTimeout  s.style.display='block';
   setTimeout(()=>s.style.display='none',3500);
 }
 </script>
