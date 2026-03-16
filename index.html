@@ -405,7 +405,7 @@ footer span { color: var(--gold); }
       <div class="tool-topbar">
         <div class="tool-topbar-title">MIS Report Generator <span>·</span> <span style="font-size:13px;font-family:'DM Sans',sans-serif;color:rgba(255,255,255,0.5);" id="t-period">Feb 2025</span></div>
         <div style="display:flex;gap:8px;">
-          <button class="tbtn" onclick="downloadTemplate()">↓ Template</button><button class="tbtn" onclick="exportExcel()">Export Excel</button><button class="tbtn" onclick="exportPDF()">Export PDF</button>
+          <button class="tbtn" onclick="downloadTemplate()">↓ Template</button><button class="tbtn" onclick="exportExcel('summary')">Excel Summary</button><button class="tbtn" onclick="exportExcel('detail')">Excel Detail</button><button class="tbtn" onclick="exportPDF()">Export PDF</button>
           <button class="tbtn-gold tbtn" onclick="generateReport()">Generate Report</button>
         </div>
       </div>
@@ -482,7 +482,6 @@ footer span { color: var(--gold); }
           </div>
           <div style="display:flex;gap:6px;">
             <button class="tbtn" onclick="toggleAllNodes()">Expand / Collapse All</button>
-            <button class="tbtn tbtn-gold" onclick="generateAI()">✦ AI Commentary</button>
           </div>
         </div>
         <div class="data-wrap" id="mis-wrap"><div style="padding:48px;text-align:center;color:var(--slate-light);font-size:14px;">Load data and click Generate Report</div></div>
@@ -501,12 +500,12 @@ footer span { color: var(--gold); }
       <!-- CHARTS -->
       <div id="tp-charts" class="tool-panel">
         <div class="chart-row">
-          <div class="chart-box"><div class="chart-title">MTD Variance by Node</div><canvas id="chart-node" height="180"></canvas></div>
-          <div class="chart-box"><div class="chart-title">Actual vs Budget — MTD</div><canvas id="chart-avb" height="180"></canvas></div>
+          <div class="chart-box"><div class="chart-title">MTD Variance by Node</div><canvas id="chart-node" height="140"></canvas></div>
+          <div class="chart-box"><div class="chart-title">Actual vs Budget — MTD</div><canvas id="chart-avb" height="140"></canvas></div>
         </div>
         <div class="chart-row">
-          <div class="chart-box"><div class="chart-title">YTD Trend — Actual vs Budget</div><canvas id="chart-ytd" height="180"></canvas></div>
-          <div class="chart-box"><div class="chart-title">Waterfall — MTD PBT Bridge</div><canvas id="chart-wf" height="180"></canvas></div>
+          <div class="chart-box"><div class="chart-title">YTD Trend — Actual vs Budget</div><canvas id="chart-ytd" height="140"></canvas></div>
+          <div class="chart-box"><div class="chart-title">Waterfall — MTD PBT Bridge</div><canvas id="chart-wf" height="140"></canvas></div>
         </div>
         <div style="text-align:center;margin-top:8px;"><button class="tbtn tbtn-navy" onclick="renderCharts()">Refresh Charts</button></div>
       </div>
@@ -1022,7 +1021,11 @@ function destroyChart(id) { if(chartInstances[id]){chartInstances[id].destroy();
 
 function renderCharts() {
   if(!appData.length){loadSample();}
-  const nodes=[...new Set(appData.map(r=>r.node))];
+  const pnlNodes=['Revenue','Direct Costs','Overheads','Depreciation','Finance Costs','Other Income','Tax'];
+  const pnlData=appData.filter(r=>pnlNodes.includes(r.node));
+  const nodes=[...new Set(pnlData.map(r=>r.node))];
+  const K=1000; // always show in thousands
+  const fmtK=v=>'₹'+(v/K).toLocaleString('en-IN',{maximumFractionDigits:0})+'K';
 
   // Node variance bar
   destroyChart('node');
@@ -1031,12 +1034,13 @@ function renderCharts() {
     data:{
       labels:nodes,
       datasets:[{
-        label:'MTD Variance',
-        data:nodes.map(n=>{const items=appData.filter(r=>r.node===n);return (items.reduce((s,r)=>s+r.ma,0)-items.reduce((s,r)=>s+r.mb,0))/scale();}),
-        backgroundColor:nodes.map(n=>{const v=appData.filter(r=>r.node===n).reduce((s,r)=>s+(r.ma-r.mb),0);return v>=0?'rgba(26,122,74,0.7)':'rgba(192,57,43,0.7)';})
+        label:'MTD Variance (₹K)',
+        data:nodes.map(n=>{const items=pnlData.filter(r=>r.node===n);return +((items.reduce((s,r)=>s+r.ma,0)-items.reduce((s,r)=>s+r.mb,0))/K).toFixed(0);}),
+        backgroundColor:nodes.map(n=>{const v=pnlData.filter(r=>r.node===n).reduce((s,r)=>s+(r.ma-r.mb),0);return v>=0?'rgba(26,122,74,0.7)':'rgba(192,57,43,0.7)';}),
+        borderRadius:3
       }]
     },
-    options:{plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>cur()+v}}},responsive:true,maintainAspectRatio:false}
+    options:{plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>'₹'+c.raw.toLocaleString('en-IN')+'K'}}},scales:{y:{ticks:{callback:v=>'₹'+v.toLocaleString('en-IN')+'K'},grid:{color:'rgba(0,0,0,0.04)'}}},responsive:true,maintainAspectRatio:false}
   });
 
   // Actual vs Budget
@@ -1046,68 +1050,52 @@ function renderCharts() {
     data:{
       labels:nodes,
       datasets:[
-        {label:'Actual',data:nodes.map(n=>appData.filter(r=>r.node===n).reduce((s,r)=>s+r.ma,0)/scale()),backgroundColor:'rgba(15,31,61,0.75)'},
-        {label:'Budget',data:nodes.map(n=>appData.filter(r=>r.node===n).reduce((s,r)=>s+r.mb,0)/scale()),backgroundColor:'rgba(201,168,76,0.5)'}
+        {label:'Actual (₹K)',data:nodes.map(n=>+((pnlData.filter(r=>r.node===n).reduce((s,r)=>s+r.ma,0))/K).toFixed(0)),backgroundColor:'rgba(15,31,61,0.75)',borderRadius:3},
+        {label:'Budget (₹K)',data:nodes.map(n=>+((pnlData.filter(r=>r.node===n).reduce((s,r)=>s+r.mb,0))/K).toFixed(0)),backgroundColor:'rgba(201,168,76,0.55)',borderRadius:3}
       ]
     },
-    options:{plugins:{legend:{position:'bottom',labels:{font:{size:11}}}},scales:{y:{ticks:{callback:v=>cur()+v}}},responsive:true,maintainAspectRatio:false}
+    options:{plugins:{legend:{position:'bottom',labels:{font:{size:10},boxWidth:12}}},scales:{y:{ticks:{callback:v=>'₹'+v.toLocaleString('en-IN')+'K'},grid:{color:'rgba(0,0,0,0.04)'}}},responsive:true,maintainAspectRatio:false}
   });
 
-  // YTD trend (simulate monthly)
+  // YTD trend
   destroyChart('ytd');
   const months=['Sep','Oct','Nov','Dec','Jan','Feb'];
-  const ytdA=appData.reduce((s,r)=>s+r.ya,0)/scale();
-  const ytdB=appData.reduce((s,r)=>s+r.yb,0)/scale();
+  const ytdA=pnlData.reduce((s,r)=>s+r.ya,0)/K;
+  const ytdB=pnlData.reduce((s,r)=>s+r.yb,0)/K;
   chartInstances['ytd']=new Chart(document.getElementById('chart-ytd'),{
     type:'line',
     data:{
       labels:months,
       datasets:[
-        {label:'YTD Actual',data:months.map((_,i)=>+(ytdA*(i+1)/6).toFixed(1)),borderColor:'#0f1f3d',backgroundColor:'rgba(15,31,61,0.06)',tension:0.35,fill:true},
-        {label:'YTD Budget',data:months.map((_,i)=>+(ytdB*(i+1)/6).toFixed(1)),borderColor:'#c9a84c',borderDash:[4,3],tension:0.35,fill:false}
+        {label:'YTD Actual (₹K)',data:months.map((_,i)=>+((ytdA*(i+1)/6)).toFixed(0)),borderColor:'#0f1f3d',backgroundColor:'rgba(15,31,61,0.06)',tension:0.35,fill:true,pointRadius:3},
+        {label:'YTD Budget (₹K)',data:months.map((_,i)=>+((ytdB*(i+1)/6)).toFixed(0)),borderColor:'#c9a84c',borderDash:[4,3],tension:0.35,fill:false,pointRadius:3}
       ]
     },
-    options:{plugins:{legend:{position:'bottom',labels:{font:{size:11}}}},scales:{y:{ticks:{callback:v=>cur()+v}}},responsive:true,maintainAspectRatio:false}
+    options:{plugins:{legend:{position:'bottom',labels:{font:{size:10},boxWidth:12}}},scales:{y:{ticks:{callback:v=>'₹'+v.toLocaleString('en-IN')+'K'},grid:{color:'rgba(0,0,0,0.04)'}}},responsive:true,maintainAspectRatio:false}
   });
 
   // Waterfall PBT bridge
   destroyChart('wf');
-  const revV=(appData.filter(r=>r.node==='Revenue').reduce((s,r)=>s+(r.ma-r.mb),0))/scale();
-  const dcV=(appData.filter(r=>r.node==='Direct Costs').reduce((s,r)=>s+(r.ma-r.mb),0))/scale();
-  const ohV=(appData.filter(r=>r.node==='Overheads').reduce((s,r)=>s+(r.ma-r.mb),0))/scale();
-  const fcV=(appData.filter(r=>r.node==='Finance Costs').reduce((s,r)=>s+(r.ma-r.mb),0))/scale();
-  const total=+(revV-dcV-ohV-fcV).toFixed(1);
+  const revV=(pnlData.filter(r=>r.node==='Revenue').reduce((s,r)=>s+(r.ma-r.mb),0))/K;
+  const dcV=(pnlData.filter(r=>r.node==='Direct Costs').reduce((s,r)=>s+(r.ma-r.mb),0))/K;
+  const ohV=(pnlData.filter(r=>r.node==='Overheads').reduce((s,r)=>s+(r.ma-r.mb),0))/K;
+  const fcV=(pnlData.filter(r=>r.node==='Finance Costs').reduce((s,r)=>s+(r.ma-r.mb),0))/K;
+  const total=+(revV-dcV-ohV-fcV).toFixed(0);
   chartInstances['wf']=new Chart(document.getElementById('chart-wf'),{
     type:'bar',
     data:{
-      labels:['Revenue Var','Direct Cost Var','Overhead Var','Finance Var','Net PBT Var'],
+      labels:['Revenue','Direct Cost','Overheads','Finance','Net PBT'],
       datasets:[{
-        data:[+revV.toFixed(1),+(-dcV).toFixed(1),+(-ohV).toFixed(1),+(-fcV).toFixed(1),total],
+        data:[+revV.toFixed(0),+(-dcV).toFixed(0),+(-ohV).toFixed(0),+(-fcV).toFixed(0),total],
         backgroundColor:['rgba(26,122,74,0.75)','rgba(192,57,43,0.7)','rgba(192,57,43,0.7)','rgba(192,57,43,0.7)',total>=0?'rgba(26,122,74,0.85)':'rgba(192,57,43,0.85)'],
+        borderRadius:3
       }]
     },
-    options:{plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>cur()+v}}},responsive:true,maintainAspectRatio:false}
+    options:{plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>'₹'+c.raw.toLocaleString('en-IN')+'K'}}},scales:{y:{ticks:{callback:v=>'₹'+v.toLocaleString('en-IN')+'K'},grid:{color:'rgba(0,0,0,0.04)'}}},responsive:true,maintainAspectRatio:false}
   });
 }
 
-// ─── AI COMMENTARY ────────────────────────────────────────────────
-function generateAI() {
-  if(!appData.length){alert('Load data first.');return;}
-  const box=document.getElementById('ai-box'), txt=document.getElementById('ai-text');
-  box.style.display='block'; txt.textContent='Generating commentary...';
-  const summary=appData.map(r=>{const mv=r.ma-r.mb,mp=r.mb?mv/r.mb*100:0;return `${r.a}(${r.node}): MTD var ${fmt(mv)} ${mp.toFixed(1)}%`;}).join('; ');
-  const period=document.getElementById('s-period')?.value||'Feb 2025';
-  const co=document.getElementById('s-company')?.value||'the company';
-  fetch('https://api.anthropic.com/v1/messages',{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:800,messages:[{role:'user',content:`You are a senior finance analyst. Write a concise professional MIS variance commentary for ${co} for ${period}. Identify key variances, likely drivers, and any red flags. Data: ${summary}. Write 3-4 sentences, professional finance tone, no bullet points.`}]})
-  }).then(r=>r.json()).then(d=>{
-    txt.textContent=d.content?.[0]?.text||'Unable to generate commentary.';
-  }).catch(()=>{
-    txt.textContent=`Revenue came in below budget by ${fmt(appData.filter(r=>r.node==='Revenue').reduce((s,r)=>s+(r.ma-r.mb),0))}, driven primarily by lower product sales partially offset by service revenue outperformance. Direct cost overruns in raw materials and labour reflect supply-side pressure and warrant close monitoring going into next month. Marketing underspend provides a one-off offset but may indicate delayed campaign execution. Finance costs are running above budget and should be reviewed with the treasury team.`;
-  });
-}
+
 
 // ─── EMAILS ──────────────────────────────────────────────────────
 function getBreaches() {
@@ -1137,35 +1125,86 @@ function generateEmails() {
   const prefix=document.getElementById('s-subject')?.value||'[MIS] Variance Commentary Required';
   const sender=document.getElementById('s-sender')?.value||'Finance Team';
   const days=document.getElementById('s-days')?.value||2;
-  const period=document.getElementById('s-period')?.value||'Feb 2025';
+  const period=document.getElementById('s-period')?.value||'Report';
+  const sc=cur(), sk=scale();
+  const fv=n=>sc+(n/sk).toLocaleString('en-IN',{minimumFractionDigits:1,maximumFractionDigits:1});
+  const fp=n=>(n>=0?'+':'')+n.toFixed(1)+'%';
+
   const grouped={};
   breaches.forEach(r=>{
     if(!grouped[r.ce])grouped[r.ce]={name:r.cn,email:r.ce,items:[]};
     grouped[r.ce].items.push(r);
   });
+
   list.innerHTML=Object.values(grouped).map((g,i)=>{
-    const lines=g.items.map(r=>{
+    // Build variance table rows
+    const tableRows=g.items.map(r=>{
+      const mv=r.ma-r.mb, yv=r.ya-r.yb;
+      const mp=r.mb?mv/r.mb*100:0, yp=r.yb?yv/r.yb*100:0;
+      const favUnfav=mv>=0?'<span style="color:#1a7a4a;font-weight:500;">Fav</span>':'<span style="color:#c0392b;font-weight:500;">Unfav</span>';
+      return `<tr style="border-bottom:1px solid #e2e8f0;">
+        <td style="padding:7px 10px;font-size:12px;">${r.node}</td>
+        <td style="padding:7px 10px;font-size:12px;">${r.a}</td>
+        <td style="padding:7px 10px;font-size:12px;text-align:right;">${fv(r.ma)}</td>
+        <td style="padding:7px 10px;font-size:12px;text-align:right;">${fv(r.mb)}</td>
+        <td style="padding:7px 10px;font-size:12px;text-align:right;${mv<0?'color:#c0392b':'color:#1a7a4a'}">${fv(mv)} (${fp(mp)})</td>
+        <td style="padding:7px 10px;font-size:12px;text-align:right;">${fv(r.ya)}</td>
+        <td style="padding:7px 10px;font-size:12px;text-align:right;">${fv(r.yb)}</td>
+        <td style="padding:7px 10px;font-size:12px;text-align:right;${yv<0?'color:#c0392b':'color:#1a7a4a'}">${fv(yv)} (${fp(yp)})</td>
+        <td style="padding:7px 10px;font-size:12px;">${favUnfav}</td>
+        <td style="padding:7px 10px;"><input type="text" id="rmk-${i}-${g.items.indexOf(r)}" placeholder="Add remarks..." style="width:140px;font-size:11px;padding:4px 7px;border:1px solid #cbd5e0;border-radius:4px;font-family:inherit;"></td>
+      </tr>`;
+    }).join('');
+
+    const tableHTML=`
+      <div style="overflow-x:auto;margin:10px 0;border:1px solid #e2e8f0;border-radius:8px;">
+        <table style="width:100%;border-collapse:collapse;min-width:900px;">
+          <thead>
+            <tr style="background:#f1f5fb;">
+              <th style="padding:8px 10px;font-size:11px;text-align:left;font-weight:600;color:#4a5568;white-space:nowrap;">Node</th>
+              <th style="padding:8px 10px;font-size:11px;text-align:left;font-weight:600;color:#4a5568;white-space:nowrap;">Item</th>
+              <th style="padding:8px 10px;font-size:11px;text-align:right;font-weight:600;color:#4a5568;white-space:nowrap;">MTD Actual</th>
+              <th style="padding:8px 10px;font-size:11px;text-align:right;font-weight:600;color:#4a5568;white-space:nowrap;">MTD Budget</th>
+              <th style="padding:8px 10px;font-size:11px;text-align:right;font-weight:600;color:#4a5568;white-space:nowrap;">MTD Variance</th>
+              <th style="padding:8px 10px;font-size:11px;text-align:right;font-weight:600;color:#4a5568;white-space:nowrap;">YTD Actual</th>
+              <th style="padding:8px 10px;font-size:11px;text-align:right;font-weight:600;color:#4a5568;white-space:nowrap;">YTD Budget</th>
+              <th style="padding:8px 10px;font-size:11px;text-align:right;font-weight:600;color:#4a5568;white-space:nowrap;">YTD Variance</th>
+              <th style="padding:8px 10px;font-size:11px;text-align:left;font-weight:600;color:#4a5568;">F/U</th>
+              <th style="padding:8px 10px;font-size:11px;text-align:left;font-weight:600;color:#4a5568;">Remarks</th>
+            </tr>
+          </thead>
+          <tbody>${tableRows}</tbody>
+        </table>
+      </div>`;
+
+    // Plain-text body for mailto
+    const itemLines=g.items.map(r=>{
       const mv=r.ma-r.mb,mp=r.mb?mv/r.mb*100:0,yv=r.ya-r.yb,yp=r.yb?yv/r.yb*100:0;
-      return `• ${r.a} (${r.node}): MTD Var ${fmt(mv)} (${fmtP(mp)}) | YTD Var ${fmt(yv)} (${fmtP(yp)})`;
-    }).join('\n');
-    const body=`Dear ${g.name},\n\nAs part of our ${period} MIS close, we require variance commentary for the following item(s) under your purview:\n\n${lines}\n\nKindly provide the key reasons for the variances above, noting any one-off items and the expected trajectory for the coming month.\n\nPlease revert within ${days} working day(s).\n\nThank you,\n${sender}`;
+      return `  ${r.node} | ${r.a}\n  MTD: Actual ${fv(r.ma)} / Budget ${fv(r.mb)} / Variance ${fv(mv)} (${fp(mp)})\n  YTD: Actual ${fv(r.ya)} / Budget ${fv(r.yb)} / Variance ${fv(yv)} (${fp(yp)})`;
+    }).join('\n\n');
+    const body=`Dear ${g.name},\n\nAs part of our ${period} MIS close, we require variance commentary for the following item(s):\n\n${itemLines}\n\nKindly provide the key reasons for each variance, noting any one-off items and the expected trajectory going forward.\n\nPlease revert within ${days} working day(s).\n\nThank you,\n${sender}`;
+
     const badges=g.items.map(r=>{const mv=r.ma-r.mb;return `<span class="badge ${mv>=0?'badge-fav':'badge-unfav'}">${r.node}</span>`;}).join(' ');
+
     return `<div class="email-card" id="ec-${i}">
-      <div class="email-to">To: ${g.name} &lt;${g.email}&gt; · ${g.items.length} item(s)</div>
-      <div class="email-subject">${prefix} — ${period}</div>
-      <div class="email-badges">${badges}</div>
-      <div class="email-body-box" id="eb-${i}" contenteditable="false">${body}</div>
+      <div class="email-to">To: <strong>${g.name}</strong> &lt;${g.email}&gt; &nbsp;·&nbsp; ${g.items.length} item(s) &nbsp;·&nbsp; ${badges}</div>
+      <div class="email-subject" style="margin:6px 0 4px;">${prefix} — ${period}</div>
+      ${tableHTML}
+      <div style="font-size:11px;color:var(--slate-light);margin:6px 0 10px;">↑ Add remarks above before sending. They will be included in the email body.</div>
       <div class="email-actions">
-        <button class="tbtn tbtn-green" onclick="sendEmail(${i},'${g.email}','${prefix} — ${period}')">Send</button>
-        <button class="tbtn" onclick="editEmail(${i})">Edit</button>
-        <button class="tbtn" onclick="copyEmail(${i})">Copy</button>
+        <button class="tbtn tbtn-green" onclick="sendEmail(${i},'${g.email}','${prefix} — ${period}',${JSON.stringify(g.items.map(r=>({a:r.a,node:r.node,ma:r.ma,mb:r.mb,ya:r.ya,yb:r.yb})))})">Send</button>
+        <button class="tbtn" onclick="copyEmail(${i},'${g.name}','${period}',${JSON.stringify(g.items.map(r=>({a:r.a,node:r.node,ma:r.ma,mb:r.mb,ya:r.ya,yb:r.yb})))})">Copy</button>
       </div>
     </div>`;
   }).join('');
 }
 
-function sendEmail(i,to,sub) {
-  const body=document.getElementById('eb-'+i).innerText;
+function sendEmail(i,to,sub,items) {
+  const name=document.querySelector(`#ec-${i} .email-to strong`)?.textContent||'';
+  const period=document.getElementById('s-period')?.value||'Report';
+  const sender=document.getElementById('s-sender')?.value||'Finance Team';
+  const days=document.getElementById('s-days')?.value||2;
+  const body=buildEmailBody(name,period,items,sender,days);
   window.location.href=`mailto:${to}?subject=${encodeURIComponent(sub)}&body=${encodeURIComponent(body)}`;
   document.getElementById('ec-'+i).style.borderColor='var(--green)';
   document.getElementById('ec-'+i).style.opacity='0.6';
@@ -1177,15 +1216,18 @@ function editEmail(i) {
   el.style.outline=editing?'none':'2px solid var(--navy)';
   if(!editing)el.focus();
 }
-function copyEmail(i) {
-  navigator.clipboard.writeText(document.getElementById('eb-'+i).innerText).then(()=>alert('Copied to clipboard'));
+function copyEmail(i,name,period,items) {
+  const sender=document.getElementById('s-sender')?.value||'Finance Team';
+  const days=document.getElementById('s-days')?.value||2;
+  const body=buildEmailBody(name,period,items,sender,days);
+  navigator.clipboard.writeText(body).then(()=>alert('Email body copied to clipboard'));
 }
 function sendAll() {
   document.querySelectorAll('[id^="ec-"]').forEach((c,i)=>{
-    const to=c.querySelector('.email-to').textContent.match(/<(.+?)>/)?.[1];
-    const sub=c.querySelector('.email-subject').textContent;
-    const body=c.querySelector('[id^="eb-"]').innerText;
-    if(to)window.open(`mailto:${to}?subject=${encodeURIComponent(sub)}&body=${encodeURIComponent(body)}`,'_blank');
+    const toMatch=c.querySelector('.email-to')?.innerHTML?.match(/&lt;(.+?)&gt;/);
+    const to=toMatch?toMatch[1]:'';
+    const sub=c.querySelector('.email-subject')?.textContent||'';
+    if(to && sub) window.open(`mailto:${to}?subject=${encodeURIComponent(sub)}`,'_blank');
   });
 }
 
@@ -1205,7 +1247,7 @@ function getNodes(textareaId) {
 }
 
 function sumNode(nodeList, field='ma') {
-  return appData.filter(r=>nodeList.includes(r.node.toLowerCase())).reduce((s,r)=>s+r[field],0);
+  return appData.filter(r=>nodeList.some(n=>r.node.toLowerCase().trim()===n.toLowerCase().trim())).reduce((s,r)=>s+(parseFloat(r[field])||0),0);
 }
 
 function renderPnL() {
@@ -1411,6 +1453,18 @@ function toggleAllNodes() {
   renderMIS();
 }
 
+function buildEmailBody(name,period,items,sender,days) {
+  const sc=cur(),sk=scale();
+  const fv=n=>sc+(n/sk).toLocaleString('en-IN',{minimumFractionDigits:1,maximumFractionDigits:1});
+  const fp=n=>(n>=0?'+':'')+n.toFixed(1)+'%';
+  const lines=items.map((r,idx)=>{
+    const rmk=document.getElementById(`rmk-0-${idx}`)?.value||'';
+    const mv=r.ma-r.mb,mp=r.mb?mv/r.mb*100:0,yv=r.ya-r.yb,yp=r.yb?yv/r.yb*100:0;
+    return `${r.node} | ${r.a}\nMTD: Actual ${fv(r.ma)} / Budget ${fv(r.mb)} / Variance ${fv(mv)} (${fp(mp)})\nYTD: Actual ${fv(r.ya)} / Budget ${fv(r.yb)} / Variance ${fv(yv)} (${fp(yp)})${rmk?'\nRemarks: '+rmk:''}`;
+  }).join('\n\n');
+  return `Dear ${name},\n\nAs part of our ${period} MIS close, we require variance commentary for the following item(s):\n\n${lines}\n\nKindly provide the key reasons for each variance, noting any one-off items and expected trajectory.\n\nPlease revert within ${days||2} working day(s).\n\nThank you,\n${sender||'Finance Team'}`;
+}
+
 // ─── EXPORT ──────────────────────────────────────────────────────
 function downloadTemplate() {
   const wb=XLSX.utils.book_new();
@@ -1430,44 +1484,16 @@ function downloadTemplate() {
   XLSX.writeFile(wb,'MIS_Template.xlsx');
 }
 
-function exportExcel() {
+function exportExcel(mode='detail') {
   if(!appData.length){alert('No data to export. Load data first.');return;}
   const period=document.getElementById('s-period')?.value||'Report';
   const company=document.getElementById('s-company')?.value||'Company';
-  const c=cur(), s=scale();
+  const sk=scale(), sc=cur();
+  const fv=n=>+(n/sk).toFixed(1);
   const nodes=[...new Set(appData.map(r=>r.node))];
   const wb=XLSX.utils.book_new();
-  const fmtV=n=>+(n/s).toFixed(1);
-  const fmtPct=n=>n?+(n*100).toFixed(1):0;
 
-  // ── Sheet 1: MIS Report ──────────────────────────────────────
-  const misRows=[];
-  misRows.push([company+' — MIS Report','','','','','Period: '+period,'','','','','','']);
-  misRows.push(['[LOGO]','','','','','','','','','','','']);
-  misRows.push([]);
-  misRows.push(['Account','Node','MTD Actual','MTD Budget','MTD Variance','MTD Var%','YTD Actual','YTD Budget','YTD Variance','YTD Var%','Contact','Email']);
-  nodes.forEach(node=>{
-    const items=appData.filter(r=>r.node===node);
-    const tma=items.reduce((sum,r)=>sum+r.ma,0),tmb=items.reduce((sum,r)=>sum+r.mb,0);
-    const tya=items.reduce((sum,r)=>sum+r.ya,0),tyb=items.reduce((sum,r)=>sum+r.yb,0);
-    const mv=tma-tmb,yv=tya-tyb;
-    const mp=tmb?mv/tmb*100:0,yp=tyb?yv/tyb*100:0;
-    misRows.push([node,'SUBTOTAL',fmtV(tma),fmtV(tmb),fmtV(mv),+(mp.toFixed(1)),fmtV(tya),fmtV(tyb),fmtV(yv),+(yp.toFixed(1)),'','']);
-    items.forEach(r=>{
-      const mv2=r.ma-r.mb,yv2=r.ya-r.yb;
-      const mp2=r.mb?mv2/r.mb*100:0,yp2=r.yb?yv2/r.yb*100:0;
-      misRows.push(['  '+r.a,r.node,fmtV(r.ma),fmtV(r.mb),fmtV(mv2),+(mp2.toFixed(1)),fmtV(r.ya),fmtV(r.yb),fmtV(yv2),+(yp2.toFixed(1)),r.cn,r.ce]);
-    });
-  });
-  const gma=appData.reduce((s,r)=>s+r.ma,0),gmb=appData.reduce((s,r)=>s+r.mb,0);
-  const gya=appData.reduce((s,r)=>s+r.ya,0),gyb=appData.reduce((s,r)=>s+r.yb,0);
-  misRows.push(['GRAND TOTAL','',fmtV(gma),fmtV(gmb),fmtV(gma-gmb),+(((gma-gmb)/gmb*100).toFixed(1)),fmtV(gya),fmtV(gyb),fmtV(gya-gyb),+(((gya-gyb)/gyb*100).toFixed(1)),'','']);
-  const wsMIS=XLSX.utils.aoa_to_sheet(misRows);
-  wsMIS['!cols']=[{wch:28},{wch:18},{wch:14},{wch:14},{wch:14},{wch:10},{wch:14},{wch:14},{wch:14},{wch:10},{wch:20},{wch:28}];
-  wsMIS['!freeze']={xSplit:1,ySplit:4};
-  XLSX.utils.book_append_sheet(wb,wsMIS,'MIS Report');
-
-  // ── Sheet 2: P&L Summary ─────────────────────────────────────
+  // ── P&L calcs ───────────────────────────────────────────────
   const revN=getNodes('pnl-revenue'), dirN=getNodes('pnl-direct');
   const ohN=getNodes('pnl-overhead'), depN=getNodes('pnl-depn');
   const finN=getNodes('pnl-finance'), taxN=getNodes('pnl-tax');
@@ -1483,183 +1509,252 @@ function exportExcel() {
   const ebitA=ebitdaA-depA,ebitB=ebitdaB-depB,ebitYA=ebitdaYA-depYA,ebitYB=ebitdaYB-depYB;
   const pbtA=ebitA-finA,pbtB=ebitB-finB,pbtYA=ebitYA-finYA,pbtYB=ebitYB-finYB;
   const patA=pbtA-taxA,patB=pbtB-taxB,patYA=pbtYA-taxYA,patYB=pbtYB-taxYB;
+
+  const addPnL=(rows,label,ma,mb,ya,yb,indent)=>{
+    const mv=ma-mb,yv=ya-yb,mp=mb?+(mv/mb*100).toFixed(1):0,yp=yb?+(yv/yb*100).toFixed(1):0;
+    rows.push([(indent?'  ':'')+label,fv(ma),fv(mb),fv(mv),mp+'%',fv(ya),fv(yb),fv(yv),yp+'%']);
+  };
+  const addPct=(rows,label,val,base)=>rows.push(['    '+label,base?+(val/base*100).toFixed(1)+'%':'N/A','','','','','','','']);
+
+  // ── Sheet 1: P&L Summary (always included) ──────────────────
   const pnlRows=[];
-  pnlRows.push([company+' — P&L Summary','','','','Period: '+period,'','','']);
+  pnlRows.push([company+' — P&L Summary','','','','Period: '+period,'','','','']);
+  pnlRows.push(['[LOGO PLACEHOLDER]','','','','','','','','']);
   pnlRows.push([]);
   pnlRows.push(['Line Item','MTD Actual','MTD Budget','MTD Variance','MTD Var%','YTD Actual','YTD Budget','YTD Variance','YTD Var%']);
-  const addPnL=(label,ma,mb,ya,yb)=>{
-    const mv=ma-mb,yv=ya-yb,mp=mb?mv/mb*100:0,yp=yb?yv/yb*100:0;
-    pnlRows.push([label,fmtV(ma),fmtV(mb),fmtV(mv),+(mp.toFixed(1)),fmtV(ya),fmtV(yb),fmtV(yv),+(yp.toFixed(1))]);
-  };
-  const addPct=(label,val,base)=>pnlRows.push([label+'',revA?+(val/base*100).toFixed(1)+'%':'N/A','','','','','','','']);
-  addPnL('Revenue',revA,revB,revYA,revYB);
-  addPnL('Less: Direct Costs',dirA,dirB,dirYA,dirYB);
-  addPnL('Gross Profit',gpA,gpB,gpYA,gpYB);
-  addPct('  GP Margin',gpA,revA);
-  addPnL('Less: Overheads',ohA,ohB,ohYA,ohYB);
-  addPnL('EBITDA',ebitdaA,ebitdaB,ebitdaYA,ebitdaYB);
-  addPct('  EBITDA Margin',ebitdaA,revA);
-  addPnL('Less: Depreciation & Amortisation',depA,depB,depYA,depYB);
-  addPnL('EBIT',ebitA,ebitB,ebitYA,ebitYB);
-  addPct('  EBIT Margin',ebitA,revA);
-  addPnL('Less: Finance Costs',finA,finB,finYA,finYB);
-  addPnL('PBT (Profit Before Tax)',pbtA,pbtB,pbtYA,pbtYB);
-  addPct('  PBT Margin',pbtA,revA);
-  pnlRows.push(['  Effective Tax Rate',pbtA?(taxA/pbtA*100).toFixed(1)+'%':'N/A','','','','','','','']);
-  addPnL('Less: Tax',taxA,taxB,taxYA,taxYB);
-  addPnL('PAT (Net Profit)',patA,patB,patYA,patYB);
-  addPct('  PAT Margin',patA,revA);
+  addPnL(pnlRows,'Revenue',revA,revB,revYA,revYB,false);
+  addPnL(pnlRows,'Less: Direct Costs',dirA,dirB,dirYA,dirYB,true);
+  addPnL(pnlRows,'Gross Profit',gpA,gpB,gpYA,gpYB,false);
+  addPct(pnlRows,'GP Margin',gpA,revA);
+  addPnL(pnlRows,'Less: Overheads',ohA,ohB,ohYA,ohYB,true);
+  addPnL(pnlRows,'EBITDA',ebitdaA,ebitdaB,ebitdaYA,ebitdaYB,false);
+  addPct(pnlRows,'EBITDA Margin',ebitdaA,revA);
+  addPnL(pnlRows,'Less: Depreciation & Amort.',depA,depB,depYA,depYB,true);
+  addPnL(pnlRows,'EBIT',ebitA,ebitB,ebitYA,ebitYB,false);
+  addPct(pnlRows,'EBIT Margin',ebitA,revA);
+  addPnL(pnlRows,'Less: Finance Costs',finA,finB,finYA,finYB,true);
+  addPnL(pnlRows,'PBT (Profit Before Tax)',pbtA,pbtB,pbtYA,pbtYB,false);
+  addPct(pnlRows,'PBT Margin',pbtA,revA);
+  pnlRows.push(['    Effective Tax Rate',pbtA?(taxA/pbtA*100).toFixed(1)+'%':'N/A','','','','','','','']);
+  addPnL(pnlRows,'Less: Tax',taxA,taxB,taxYA,taxYB,true);
+  addPnL(pnlRows,'PAT (Net Profit)',patA,patB,patYA,patYB,false);
+  addPct(pnlRows,'PAT Margin',patA,revA);
   const wsPnL=XLSX.utils.aoa_to_sheet(pnlRows);
-  wsPnL['!cols']=[{wch:32},{wch:14},{wch:14},{wch:14},{wch:10},{wch:14},{wch:14},{wch:14},{wch:10}];
+  wsPnL['!cols']=[{wch:34},{wch:14},{wch:14},{wch:14},{wch:10},{wch:14},{wch:14},{wch:14},{wch:10}];
   XLSX.utils.book_append_sheet(wb,wsPnL,'P&L Summary');
 
-  // ── Sheet 3: Balance Sheet ────────────────────────────────────
+  // ── Sheet 2: Balance Sheet Summary ──────────────────────────
   const ncaN=getNodes('bs-nca'),caN=getNodes('bs-ca'),clN=getNodes('bs-cl');
   const nclN=getNodes('bs-ncl'),eqN=getNodes('bs-eq');
   const ncaA=sumNode(ncaN),caA=sumNode(caN),clA=sumNode(clN),nclA=sumNode(nclN),eqA=sumNode(eqN);
   const bsRows=[];
-  bsRows.push([company+' — Balance Sheet','','Period: '+period,'']);
+  bsRows.push([company+' — Balance Sheet Summary','','Period: '+period,'']);
+  bsRows.push(['[LOGO PLACEHOLDER]','','','']);
   bsRows.push([]);
-  bsRows.push(['ASSETS','Amount ('+c+')','LIABILITIES & EQUITY','Amount ('+c+')']);
-  bsRows.push(['Non-current Assets',fmtV(ncaA),'Non-current Liabilities',fmtV(nclA)]);
-  ncaN.forEach(n=>{const v=sumNode([n]);if(v!==0)bsRows.push(['  '+n.charAt(0).toUpperCase()+n.slice(1),fmtV(v),'','']);});
-  bsRows.push(['Current Assets',fmtV(caA),'Current Liabilities',fmtV(clA)]);
-  caN.forEach(n=>{const v=sumNode([n]);if(v!==0)bsRows.push(['  '+n.charAt(0).toUpperCase()+n.slice(1),fmtV(v),'','']);});
-  bsRows.push(['','','Equity & Reserves',fmtV(eqA)]);
-  eqN.forEach(n=>{const v=sumNode([n]);if(v!==0)bsRows.push(['','','  '+n.charAt(0).toUpperCase()+n.slice(1),fmtV(v)]);});
-  bsRows.push(['TOTAL ASSETS',fmtV(ncaA+caA),'TOTAL LIABILITIES & EQUITY',fmtV(nclA+clA+eqA)]);
+  bsRows.push(['ASSETS','Amount ('+sc+')','LIABILITIES & EQUITY','Amount ('+sc+')']);
+  bsRows.push(['Non-current Assets',fv(ncaA),'Non-current Liabilities',fv(nclA)]);
+  const maxRows=Math.max(ncaN.length,caN.length,nclN.length,clN.length,eqN.length);
+  ncaN.forEach((n,i)=>{const v=sumNode([n]);if(v!==0)bsRows.push(['  '+n.charAt(0).toUpperCase()+n.slice(1),fv(v),'','']);});
+  bsRows.push(['Current Assets',fv(caA),'Current Liabilities',fv(clA)]);
+  caN.forEach(n=>{const v=sumNode([n]);if(v!==0)bsRows.push(['  '+n.charAt(0).toUpperCase()+n.slice(1),fv(v),'','']);});
+  bsRows.push(['','','Equity & Reserves',fv(eqA)]);
+  eqN.forEach(n=>{const v=sumNode([n]);if(v!==0)bsRows.push(['','','  '+n.charAt(0).toUpperCase()+n.slice(1),fv(v)]);});
+  bsRows.push([]);
+  bsRows.push(['TOTAL ASSETS',fv(ncaA+caA),'TOTAL LIABILITIES & EQUITY',fv(nclA+clA+eqA)]);
   const diff=Math.abs((ncaA+caA)-(nclA+clA+eqA));
-  bsRows.push([]);
-  bsRows.push(['Balance check',diff<1?'✓ Balanced':'⚠ Difference: '+fmtV(diff),'','']);
+  bsRows.push([diff<1?'✓ Balance Sheet balances':'⚠ Difference: '+fv(diff),'','','']);
   const wsBS=XLSX.utils.aoa_to_sheet(bsRows);
-  wsBS['!cols']=[{wch:30},{wch:16},{wch:30},{wch:16}];
+  wsBS['!cols']=[{wch:32},{wch:18},{wch:32},{wch:18}];
   XLSX.utils.book_append_sheet(wb,wsBS,'Balance Sheet');
 
-  XLSX.writeFile(wb,`MIS_${period}.xlsx`);
+  if(mode==='detail') {
+    // ── Sheet 3: MIS Detail ──────────────────────────────────
+    const misRows=[];
+    misRows.push([company+' — MIS Report (Detail)','','','','','Period: '+period,'','','','','','']);
+    misRows.push(['[LOGO PLACEHOLDER]','','','','','','','','','','','']);
+    misRows.push([]);
+    misRows.push(['Account','Node','MTD Actual','MTD Budget','MTD Variance','MTD Var%','YTD Actual','YTD Budget','YTD Variance','YTD Var%','Contact','Email']);
+    nodes.forEach(node=>{
+      const items=appData.filter(r=>r.node===node);
+      const tma=items.reduce((s,r)=>s+r.ma,0),tmb=items.reduce((s,r)=>s+r.mb,0);
+      const tya=items.reduce((s,r)=>s+r.ya,0),tyb=items.reduce((s,r)=>s+r.yb,0);
+      const mv=tma-tmb,yv=tya-tyb,mp=tmb?+(mv/tmb*100).toFixed(1):0,yp=tyb?+(yv/tyb*100).toFixed(1):0;
+      misRows.push([node,'SUBTOTAL',fv(tma),fv(tmb),fv(mv),mp+'%',fv(tya),fv(tyb),fv(yv),yp+'%','','']);
+      items.forEach(r=>{
+        const mv2=r.ma-r.mb,yv2=r.ya-r.yb,mp2=r.mb?+(mv2/r.mb*100).toFixed(1):0,yp2=r.yb?+(yv2/r.yb*100).toFixed(1):0;
+        misRows.push(['  '+r.a,r.node,fv(r.ma),fv(r.mb),fv(mv2),mp2+'%',fv(r.ya),fv(r.yb),fv(yv2),yp2+'%',r.cn,r.ce]);
+      });
+    });
+    const gma=appData.reduce((s,r)=>s+r.ma,0),gmb=appData.reduce((s,r)=>s+r.mb,0);
+    const gya=appData.reduce((s,r)=>s+r.ya,0),gyb=appData.reduce((s,r)=>s+r.yb,0);
+    misRows.push(['GRAND TOTAL','',fv(gma),fv(gmb),fv(gma-gmb),gmb?+(((gma-gmb)/gmb)*100).toFixed(1)+'%':'0%',fv(gya),fv(gyb),fv(gya-gyb),gyb?+(((gya-gyb)/gyb)*100).toFixed(1)+'%':'0%','','']);
+    const wsMIS=XLSX.utils.aoa_to_sheet(misRows);
+    wsMIS['!cols']=[{wch:28},{wch:18},{wch:14},{wch:14},{wch:14},{wch:10},{wch:14},{wch:14},{wch:14},{wch:10},{wch:20},{wch:28}];
+    XLSX.utils.book_append_sheet(wb,wsMIS,'MIS Detail');
+  }
+
+  XLSX.writeFile(wb,`${mode==='summary'?'Summary':'Report'}_${period}.xlsx`);
 }
 
 function exportPDF() {
   if(!appData.length){alert('No data to export. Load data first.');return;}
   const {jsPDF}=window.jspdf;
-  const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
+  const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
   const period=document.getElementById('s-period')?.value||'Report';
   const company=document.getElementById('s-company')?.value||'Company';
-  const s=scale(), c=cur();
-  const nodes=[...new Set(appData.map(r=>r.node))];
+  const sk=scale(), sc=cur();
+  const fv=n=>sc+(n/sk).toLocaleString('en-IN',{minimumFractionDigits:1,maximumFractionDigits:1});
+  const fp=n=>(n>=0?'+':'')+n.toFixed(1)+'%';
+  const W=210, margin=14;
 
-  // Header
+  // ── Header ───────────────────────────────────────────────────
   doc.setFillColor(15,31,61);
-  doc.rect(0,0,297,22,'F');
+  doc.rect(0,0,W,24,'F');
   doc.setTextColor(201,168,76);
-  doc.setFontSize(14);
-  doc.setFont('helvetica','bold');
-  doc.text('MIS Report — '+company,14,10);
+  doc.setFontSize(13); doc.setFont('helvetica','bold');
+  doc.text(company,margin,11);
   doc.setTextColor(255,255,255);
-  doc.setFontSize(9);
-  doc.setFont('helvetica','normal');
-  doc.text('Period: '+period+'   |   Generated: '+new Date().toLocaleDateString('en-IN'),14,17);
+  doc.setFontSize(9); doc.setFont('helvetica','normal');
+  doc.text('Financial Summary Report — '+period,margin,18);
   doc.setTextColor(201,168,76);
-  doc.text('Built with MIS Report Generator by Rahul Kumar Jha, CA',230,17,'right');
+  doc.text('Confidential',W-margin,18,'right');
 
-  // Summary KPIs
-  const revA=appData.filter(r=>r.node==='Revenue').reduce((s,r)=>s+r.ma,0);
-  const revB=appData.filter(r=>r.node==='Revenue').reduce((s,r)=>s+r.mb,0);
-  const opex=appData.filter(r=>r.node!=='Revenue'&&r.node!=='Tax').reduce((s,r)=>s+r.ma,0);
-  const pbt=revA-opex;
-  const vp=revB?(revA-revB)/revB*100:0;
-  const kpis=[
-    {l:'Revenue (MTD)',v:c+(revA/s).toLocaleString('en-IN',{maximumFractionDigits:1})},
-    {l:'Operating Costs (MTD)',v:c+(opex/s).toLocaleString('en-IN',{maximumFractionDigits:1})},
-    {l:'PBT (MTD)',v:c+(pbt/s).toLocaleString('en-IN',{maximumFractionDigits:1})},
-    {l:'Revenue Variance',v:(vp>=0?'+':'')+vp.toFixed(1)+'%'}
+  let y=30;
+
+  // ── P&L SUMMARY ──────────────────────────────────────────────
+  // Section header
+  doc.setFillColor(201,168,76);
+  doc.rect(margin,y,W-margin*2,7,'F');
+  doc.setTextColor(15,31,61);
+  doc.setFontSize(9); doc.setFont('helvetica','bold');
+  doc.text('PROFIT & LOSS SUMMARY',margin+3,y+5);
+  y+=10;
+
+  // Build P&L data
+  const revN=getNodes('pnl-revenue'), dirN=getNodes('pnl-direct');
+  const ohN=getNodes('pnl-overhead'), depN=getNodes('pnl-depn');
+  const finN=getNodes('pnl-finance'), taxN=getNodes('pnl-tax');
+  const sm=(nodes,f)=>sumNode(nodes,f);
+  const revA=sm(revN,'ma'),revB=sm(revN,'mb'),revYA=sm(revN,'ya'),revYB=sm(revN,'yb');
+  const dirA=sm(dirN,'ma'),dirB=sm(dirN,'mb'),dirYA=sm(dirN,'ya'),dirYB=sm(dirN,'yb');
+  const ohA=sm(ohN,'ma'),ohB=sm(ohN,'mb'),ohYA=sm(ohN,'ya'),ohYB=sm(ohN,'yb');
+  const depA=sm(depN,'ma'),depB=sm(depN,'mb'),depYA=sm(depN,'ya'),depYB=sm(depN,'yb');
+  const finA=sm(finN,'ma'),finB=sm(finN,'mb'),finYA=sm(finN,'ya'),finYB=sm(finN,'yb');
+  const taxA=sm(taxN,'ma'),taxB=sm(taxN,'mb'),taxYA=sm(taxN,'ya'),taxYB=sm(taxN,'yb');
+  const gpA=revA-dirA,gpB=revB-dirB,gpYA=revYA-dirYA,gpYB=revYB-dirYB;
+  const ebitdaA=gpA-ohA,ebitdaB=gpB-ohB,ebitdaYA=gpYA-ohYA,ebitdaYB=gpYB-ohYB;
+  const ebitA=ebitdaA-depA,ebitB=ebitdaB-depB,ebitYA=ebitdaYA-depYA,ebitYB=ebitdaYB-depYB;
+  const pbtA=ebitA-finA,pbtB=ebitB-finB,pbtYA=ebitYA-finYA,pbtYB=ebitYB-finYB;
+  const patA=pbtA-taxA,patB=pbtB-taxB,patYA=pbtYA-taxYA,patYB=pbtYB-taxYB;
+  const taxRateA=pbtA?taxA/pbtA*100:0;
+
+  const pnlHead=[['Line Item','MTD Actual','MTD Budget','MTD Var','MTD Var%','YTD Actual','YTD Budget','YTD Var','YTD Var%']];
+  const mkRow=(label,ma,mb,ya,yb,bold,indent)=>{
+    const mv=ma-mb,yv=ya-yb,mp=mb?mv/mb*100:0,yp=yb?yv/yb*100:0;
+    const lbl=(indent?'    ':'')+label;
+    const style=bold?{fontStyle:'bold',fillColor:[241,245,251]}:{};
+    const mvStyle={...style,textColor:mv>=0?[26,122,74]:[192,57,43]};
+    const yvStyle={...style,textColor:yv>=0?[26,122,74]:[192,57,43]};
+    return [{content:lbl,styles:style},
+      {content:fv(ma),styles:style},{content:fv(mb),styles:style},
+      {content:fv(mv),styles:mvStyle},{content:fp(mp),styles:mvStyle},
+      {content:fv(ya),styles:style},{content:fv(yb),styles:style},
+      {content:fv(yv),styles:yvStyle},{content:fp(yp),styles:yvStyle}];
+  };
+  const mkPct=(label,val,base)=>[{content:'    '+label,styles:{textColor:[113,128,150],fontSize:7}},
+    {content:base?(val/base*100).toFixed(1)+'%':'—',styles:{textColor:[113,128,150],fontSize:7}},
+    '','','','','','',''];
+
+  const pnlBody=[
+    mkRow('Revenue',revA,revB,revYA,revYB,true,false),
+    mkRow('Less: Direct Costs',dirA,dirB,dirYA,dirYB,false,true),
+    mkRow('Gross Profit',gpA,gpB,gpYA,gpYB,true,false),
+    mkPct('GP Margin',gpA,revA),
+    mkRow('Less: Overheads',ohA,ohB,ohYA,ohYB,false,true),
+    mkRow('EBITDA',ebitdaA,ebitdaB,ebitdaYA,ebitdaYB,true,false),
+    mkPct('EBITDA Margin',ebitdaA,revA),
+    mkRow('Less: Depreciation & Amort.',depA,depB,depYA,depYB,false,true),
+    mkRow('EBIT',ebitA,ebitB,ebitYA,ebitYB,true,false),
+    mkPct('EBIT Margin',ebitA,revA),
+    mkRow('Less: Finance Costs',finA,finB,finYA,finYB,false,true),
+    mkRow('PBT (Profit Before Tax)',pbtA,pbtB,pbtYA,pbtYB,true,false),
+    mkPct('PBT Margin',pbtA,revA),
+    [{content:'    Effective Tax Rate',styles:{textColor:[113,128,150],fontSize:7}},
+     {content:taxRateA.toFixed(1)+'%',styles:{textColor:[113,128,150],fontSize:7}},'','','','','','',''],
+    mkRow('Less: Tax',taxA,taxB,taxYA,taxYB,false,true),
+    mkRow('PAT (Net Profit)',patA,patB,patYA,patYB,true,false),
+    mkPct('PAT Margin',patA,revA),
   ];
-  let kx=14;
-  kpis.forEach(k=>{
-    doc.setFillColor(247,245,240);
-    doc.roundedRect(kx,26,62,14,2,2,'F');
-    doc.setTextColor(113,128,150);
-    doc.setFontSize(7);
-    doc.setFont('helvetica','normal');
-    doc.text(k.l,kx+4,32);
-    doc.setTextColor(15,31,61);
-    doc.setFontSize(11);
-    doc.setFont('helvetica','bold');
-    doc.text(k.v,kx+4,40);
-    kx+=66;
-  });
-
-  // MIS Table
-  const head=[['Account','Node','MTD Actual','MTD Budget','MTD Var','MTD Var%','YTD Actual','YTD Budget','YTD Var','YTD Var%']];
-  const body=[];
-  nodes.forEach(node=>{
-    const items=appData.filter(r=>r.node===node);
-    const tma=items.reduce((sum,r)=>sum+r.ma,0),tmb=items.reduce((sum,r)=>sum+r.mb,0);
-    const tya=items.reduce((sum,r)=>sum+r.ya,0),tyb=items.reduce((sum,r)=>sum+r.yb,0);
-    const mv=tma-tmb,yv=tya-tyb,mp=tmb?mv/tmb*100:0,yp=tyb?yv/tyb*100:0;
-    body.push([{content:node,styles:{fontStyle:'bold',fillColor:[241,245,251]}},'',
-      {content:c+(tma/s).toLocaleString('en-IN',{maximumFractionDigits:1}),styles:{fontStyle:'bold',fillColor:[241,245,251]}},
-      {content:c+(tmb/s).toLocaleString('en-IN',{maximumFractionDigits:1}),styles:{fontStyle:'bold',fillColor:[241,245,251]}},
-      {content:c+(mv/s).toLocaleString('en-IN',{maximumFractionDigits:1}),styles:{fontStyle:'bold',fillColor:[241,245,251],textColor:mv>=0?[26,122,74]:[192,57,43]}},
-      {content:(mp>=0?'+':'')+mp.toFixed(1)+'%',styles:{fontStyle:'bold',fillColor:[241,245,251],textColor:mp>=0?[26,122,74]:[192,57,43]}},
-      {content:c+(tya/s).toLocaleString('en-IN',{maximumFractionDigits:1}),styles:{fontStyle:'bold',fillColor:[241,245,251]}},
-      {content:c+(tyb/s).toLocaleString('en-IN',{maximumFractionDigits:1}),styles:{fontStyle:'bold',fillColor:[241,245,251]}},
-      {content:c+(yv/s).toLocaleString('en-IN',{maximumFractionDigits:1}),styles:{fontStyle:'bold',fillColor:[241,245,251],textColor:yv>=0?[26,122,74]:[192,57,43]}},
-      {content:(yp>=0?'+':'')+yp.toFixed(1)+'%',styles:{fontStyle:'bold',fillColor:[241,245,251],textColor:yp>=0?[26,122,74]:[192,57,43]}}
-    ]);
-    items.forEach(r=>{
-      const mv2=r.ma-r.mb,yv2=r.ya-r.yb,mp2=r.mb?mv2/r.mb*100:0,yp2=r.yb?yv2/r.yb*100:0;
-      body.push([
-        {content:'  '+r.a,styles:{textColor:[74,85,104],fontSize:8}},
-        {content:r.node,styles:{textColor:[74,85,104],fontSize:8}},
-        c+(r.ma/s).toLocaleString('en-IN',{maximumFractionDigits:1}),
-        c+(r.mb/s).toLocaleString('en-IN',{maximumFractionDigits:1}),
-        {content:c+(mv2/s).toLocaleString('en-IN',{maximumFractionDigits:1}),styles:{textColor:mv2>=0?[26,122,74]:[192,57,43]}},
-        {content:(mp2>=0?'+':'')+mp2.toFixed(1)+'%',styles:{textColor:mp2>=0?[26,122,74]:[192,57,43]}},
-        c+(r.ya/s).toLocaleString('en-IN',{maximumFractionDigits:1}),
-        c+(r.yb/s).toLocaleString('en-IN',{maximumFractionDigits:1}),
-        {content:c+(yv2/s).toLocaleString('en-IN',{maximumFractionDigits:1}),styles:{textColor:yv2>=0?[26,122,74]:[192,57,43]}},
-        {content:(yp2>=0?'+':'')+yp2.toFixed(1)+'%',styles:{textColor:yp2>=0?[26,122,74]:[192,57,43]}}
-      ]);
-    });
-  });
-  const gma=appData.reduce((s,r)=>s+r.ma,0),gmb=appData.reduce((s,r)=>s+r.mb,0);
-  const gya=appData.reduce((s,r)=>s+r.ya,0),gyb=appData.reduce((s,r)=>s+r.yb,0);
-  const gmv=gma-gmb,gyv=gya-gyb,gmp=gmb?gmv/gmb*100:0,gyp=gyb?gyv/gyb*100:0;
-  body.push([
-    {content:'GRAND TOTAL',styles:{fontStyle:'bold',fillColor:[15,31,61],textColor:[255,255,255]}},
-    {content:'',styles:{fillColor:[15,31,61]}},
-    {content:c+(gma/s).toLocaleString('en-IN',{maximumFractionDigits:1}),styles:{fontStyle:'bold',fillColor:[15,31,61],textColor:[255,255,255]}},
-    {content:c+(gmb/s).toLocaleString('en-IN',{maximumFractionDigits:1}),styles:{fontStyle:'bold',fillColor:[15,31,61],textColor:[255,255,255]}},
-    {content:c+(gmv/s).toLocaleString('en-IN',{maximumFractionDigits:1}),styles:{fontStyle:'bold',fillColor:[15,31,61],textColor:gmv>=0?[100,220,150]:[255,120,100]}},
-    {content:(gmp>=0?'+':'')+gmp.toFixed(1)+'%',styles:{fontStyle:'bold',fillColor:[15,31,61],textColor:gmp>=0?[100,220,150]:[255,120,100]}},
-    {content:c+(gya/s).toLocaleString('en-IN',{maximumFractionDigits:1}),styles:{fontStyle:'bold',fillColor:[15,31,61],textColor:[255,255,255]}},
-    {content:c+(gyb/s).toLocaleString('en-IN',{maximumFractionDigits:1}),styles:{fontStyle:'bold',fillColor:[15,31,61],textColor:[255,255,255]}},
-    {content:c+(gyv/s).toLocaleString('en-IN',{maximumFractionDigits:1}),styles:{fontStyle:'bold',fillColor:[15,31,61],textColor:gyv>=0?[100,220,150]:[255,120,100]}},
-    {content:(gyp>=0?'+':'')+gyp.toFixed(1)+'%',styles:{fontStyle:'bold',fillColor:[15,31,61],textColor:gyp>=0?[100,220,150]:[255,120,100]}}
-  ]);
 
   doc.autoTable({
-    head,body,startY:45,
-    styles:{fontSize:8,cellPadding:2.5,font:'helvetica'},
-    headStyles:{fillColor:[15,31,61],textColor:[201,168,76],fontStyle:'bold',fontSize:8},
+    head:pnlHead, body:pnlBody, startY:y,
+    styles:{fontSize:7.5,cellPadding:2,font:'helvetica'},
+    headStyles:{fillColor:[15,31,61],textColor:[201,168,76],fontStyle:'bold',fontSize:7.5},
     alternateRowStyles:{fillColor:[252,252,252]},
-    columnStyles:{0:{cellWidth:40},1:{cellWidth:22},2:{cellWidth:22},3:{cellWidth:22},4:{cellWidth:22},5:{cellWidth:16},6:{cellWidth:22},7:{cellWidth:22},8:{cellWidth:22},9:{cellWidth:16}},
-    margin:{left:14,right:14},
+    columnStyles:{0:{cellWidth:44},1:{cellWidth:20},2:{cellWidth:20},3:{cellWidth:20},4:{cellWidth:14},5:{cellWidth:20},6:{cellWidth:20},7:{cellWidth:20},8:{cellWidth:14}},
+    margin:{left:margin,right:margin},
     tableLineColor:[226,232,240],tableLineWidth:0.1
   });
 
-  // Footer
+  y=doc.lastAutoTable.finalY+12;
+
+  // ── BALANCE SHEET SUMMARY ────────────────────────────────────
+  // Check if new page needed
+  if(y>230){doc.addPage();y=20;}
+
+  doc.setFillColor(15,31,61);
+  doc.rect(margin,y,W-margin*2,7,'F');
+  doc.setTextColor(201,168,76);
+  doc.setFontSize(9); doc.setFont('helvetica','bold');
+  doc.text('BALANCE SHEET SUMMARY',margin+3,y+5);
+  y+=10;
+
+  const ncaN=getNodes('bs-nca'),caN=getNodes('bs-ca');
+  const clN=getNodes('bs-cl'),nclN=getNodes('bs-ncl'),eqN=getNodes('bs-eq');
+  const ncaA=sumNode(ncaN),caA=sumNode(caN),clA=sumNode(clN),nclA=sumNode(nclN),eqA=sumNode(eqN);
+  const totalAssets=ncaA+caA, totalLiabEq=nclA+clA+eqA;
+
+  const bsHead=[['',`As at ${period}`,'','']];
+  const bsBody=[
+    [{content:'ASSETS',styles:{fontStyle:'bold',fillColor:[241,245,251]}},'','',''],
+    ['Non-current Assets',fv(ncaA),'',''],
+    ...getNodes('bs-nca').map(n=>{const v=sumNode([n]);return v!==0?[{content:'    '+n.charAt(0).toUpperCase()+n.slice(1),styles:{fontSize:7,textColor:[74,85,104]}},fv(v),'','']:null;}).filter(Boolean),
+    ['Current Assets',fv(caA),'',''],
+    ...getNodes('bs-ca').map(n=>{const v=sumNode([n]);return v!==0?[{content:'    '+n.charAt(0).toUpperCase()+n.slice(1),styles:{fontSize:7,textColor:[74,85,104]}},fv(v),'','']:null;}).filter(Boolean),
+    [{content:'Total Assets',styles:{fontStyle:'bold',fillColor:[15,31,61],textColor:[255,255,255]}},{content:fv(totalAssets),styles:{fontStyle:'bold',fillColor:[15,31,61],textColor:[255,255,255]}},'',''],
+    ['','','',''],
+    [{content:'LIABILITIES & EQUITY',styles:{fontStyle:'bold',fillColor:[241,245,251]}},'','',''],
+    ['Non-current Liabilities','',fv(nclA),''],
+    ...getNodes('bs-ncl').map(n=>{const v=sumNode([n]);return v!==0?[{content:'    '+n.charAt(0).toUpperCase()+n.slice(1),styles:{fontSize:7,textColor:[74,85,104]}},'',fv(v),'']:null;}).filter(Boolean),
+    ['Current Liabilities','',fv(clA),''],
+    ...getNodes('bs-cl').map(n=>{const v=sumNode([n]);return v!==0?[{content:'    '+n.charAt(0).toUpperCase()+n.slice(1),styles:{fontSize:7,textColor:[74,85,104]}},'',fv(v),'']:null;}).filter(Boolean),
+    ['Equity & Reserves','',fv(eqA),''],
+    ...getNodes('bs-eq').map(n=>{const v=sumNode([n]);return v!==0?[{content:'    '+n.charAt(0).toUpperCase()+n.slice(1),styles:{fontSize:7,textColor:[74,85,104]}},'',fv(v),'']:null;}).filter(Boolean),
+    [{content:'Total Liabilities & Equity',styles:{fontStyle:'bold',fillColor:[201,168,76],textColor:[15,31,61]}},{content:'',styles:{fillColor:[201,168,76]}},{content:fv(totalLiabEq),styles:{fontStyle:'bold',fillColor:[201,168,76],textColor:[15,31,61]}},''],
+    ['','','',''],
+    [{content:Math.abs(totalAssets-totalLiabEq)<1?'✓ Balance Sheet balances':'⚠ Out of balance by '+fv(Math.abs(totalAssets-totalLiabEq)),styles:{textColor:Math.abs(totalAssets-totalLiabEq)<1?[26,122,74]:[192,57,43],fontSize:7,fontStyle:'bold'}},'','',''],
+  ];
+
+  doc.autoTable({
+    head:bsHead, body:bsBody, startY:y,
+    styles:{fontSize:7.5,cellPadding:2,font:'helvetica'},
+    headStyles:{fillColor:[241,245,251],textColor:[15,31,61],fontStyle:'bold',fontSize:7.5},
+    columnStyles:{0:{cellWidth:70},1:{cellWidth:40},2:{cellWidth:40},3:{cellWidth:22}},
+    margin:{left:margin,right:margin},
+    tableLineColor:[226,232,240],tableLineWidth:0.1
+  });
+
+  // ── Footer on all pages ──────────────────────────────────────
   const pageCount=doc.internal.getNumberOfPages();
   for(let i=1;i<=pageCount;i++){
     doc.setPage(i);
     doc.setFillColor(15,31,61);
-    doc.rect(0,doc.internal.pageSize.height-10,297,10,'F');
-    doc.setTextColor(113,128,150);
-    doc.setFontSize(7);
-    doc.text(`${company} — Confidential — ${period}`,14,doc.internal.pageSize.height-3);
-    doc.text(`Page ${i} of ${pageCount}`,297-14,doc.internal.pageSize.height-3,'right');
+    doc.rect(0,287,W,10,'F');
+    doc.setTextColor(113,128,150); doc.setFontSize(7);
+    doc.text(`${company} — Confidential — ${period}`,margin,293);
+    doc.text(`Page ${i} of ${pageCount}`,W-margin,293,'right');
   }
-  doc.save(`MIS_${period}.pdf`);
+  doc.save(`Financial_Summary_${period}.pdf`);
 }
 
 // ─── FEEDBACK ─────────────────────────────────────────────────────
