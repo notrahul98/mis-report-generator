@@ -413,7 +413,6 @@ footer span { color: var(--gold); }
       <div class="tool-tabs">
         <div class="tool-tab active" onclick="switchTab('data')">Data Input</div>
         <div class="tool-tab" onclick="switchTab('report')">MIS Report</div>
-        <div class="tool-tab" onclick="switchTab('charts')">Charts</div>
         <div class="tool-tab" onclick="switchTab('emails')">Email Drafts</div>
         <div class="tool-tab" onclick="switchTab('bs')">Balance Sheet</div>
         <div class="tool-tab" onclick="switchTab('settings')">Settings</div>
@@ -497,18 +496,6 @@ footer span { color: var(--gold); }
         </div>
       </div>
 
-      <!-- CHARTS -->
-      <div id="tp-charts" class="tool-panel">
-        <div class="chart-row">
-          <div class="chart-box"><div class="chart-title">MTD Variance by Node</div><canvas id="chart-node" height="140"></canvas></div>
-          <div class="chart-box"><div class="chart-title">Actual vs Budget — MTD</div><canvas id="chart-avb" height="140"></canvas></div>
-        </div>
-        <div class="chart-row">
-          <div class="chart-box"><div class="chart-title">YTD Trend — Actual vs Budget</div><canvas id="chart-ytd" height="140"></canvas></div>
-          <div class="chart-box"><div class="chart-title">Waterfall — MTD PBT Bridge</div><canvas id="chart-wf" height="140"></canvas></div>
-        </div>
-        <div style="text-align:center;margin-top:8px;"><button class="tbtn tbtn-navy" onclick="renderCharts()">Refresh Charts</button></div>
-      </div>
 
       <!-- EMAILS -->
       <div id="tp-emails" class="tool-panel">
@@ -763,12 +750,11 @@ function varCls(n) { return n>0?'pos':n<0?'neg':'neu'; }
 // ─── TAB SWITCHING ────────────────────────────────────────────────
 function switchTab(id) {
   document.querySelectorAll('.tool-tab').forEach((t,i)=>{
-    const ids=['data','report','charts','emails','bs','settings'];
+    const ids=['data','report','emails','bs','settings'];
     t.classList.toggle('active', ids[i]===id);
   });
   document.querySelectorAll('.tool-panel').forEach(p=>p.classList.remove('active'));
   document.getElementById('tp-'+id).classList.add('active');
-  if(id==='charts' && appData.length) setTimeout(renderCharts,100);
   if(id==='bs' && appData.length) renderBS();
   if(id==='report' && appData.length) { renderPnL(); renderRatios(); }
 }
@@ -934,6 +920,13 @@ function generateReport() {
 }
 
 function updateMetrics() {
+  if(!appData.length){
+    ['m-rev','m-gp','m-ebitda','m-pbt','m-pat','m-var'].forEach(id=>{
+      const el=document.getElementById(id);
+      if(el){el.textContent='—';el.className='metric-val';}
+    });
+    return;
+  }
   const revNodes=getNodes('pnl-revenue');
   const dirNodes=getNodes('pnl-direct');
   const ohNodes=getNodes('pnl-overhead');
@@ -1404,84 +1397,42 @@ function renderBS() {
   const period=document.getElementById('s-period')?.value||'—';
   document.getElementById('bs-period-lbl').textContent=period;
   const {ncaN,caN,clN,nclN,eqN,ncaA,caA,clA,nclA,eqA}=computeBS();
-
-  // Auto-bridge: compute current period PAT from P&L section
-  // and add it under Equity so BS always balances
-  const pnl=computePnL();
-  const patA=pnl.patA; // current period net profit (MTD)
-
   const totalAssets=ncaA+caA;
-  // Equity already in TB + current period PAT (PAT is positive = profit = increases equity)
-  const totalLiabEq=Math.abs(nclA)+Math.abs(clA)+Math.abs(eqA)+Math.abs(patA);
-
+  const totalLiabEqRaw=Math.abs(nclA)+Math.abs(clA)+Math.abs(eqA);
+  const bridgeAmt=totalAssets-totalLiabEqRaw;
+  const totalLiabEq=totalLiabEqRaw+Math.abs(bridgeAmt);
   const bsRow=(label,val,bold,indent,color)=>{
     const st=bold?'font-weight:600;background:#f1f5fb;':'';
     const pl=indent?'padding-left:20px;font-size:12px;':'';
-    const cl=color?`color:${color};`:'';
-    return `<tr style="${st}${cl}"><td style="${pl}">${label}</td>
-      <td style="text-align:right;${cl}">${fmt(Math.abs(val))}</td></tr>`;
+    const cl=color?('color:'+color+';'):'';
+    return '<tr style="'+st+cl+'"><td style="'+pl+'">'+label+'</td><td style="text-align:right;'+cl+'">'+fmt(Math.abs(val))+'</td></tr>';
   };
-
-  // Assets side
-  let assetRows=`<thead><tr>
-    <th>Assets</th>
-    <th style="text-align:right;">MTD Actual</th>
-  </tr></thead><tbody>`;
+  let assetRows='<thead><tr><th>Assets</th><th style="text-align:right;">MTD Actual</th></tr></thead><tbody>';
   assetRows+=bsRow('Non-current Assets',ncaA,true,false);
   ncaN.forEach(n=>{const v=sumNode([n]);if(v!==0)assetRows+=bsRow(n.charAt(0).toUpperCase()+n.slice(1),v,false,true);});
   assetRows+=bsRow('Current Assets',caA,true,false);
   caN.forEach(n=>{const v=sumNode([n]);if(v!==0)assetRows+=bsRow(n.charAt(0).toUpperCase()+n.slice(1),v,false,true);});
-  assetRows+=`<tr style="font-weight:600;background:var(--navy);color:white;">
-    <td>Total Assets</td>
-    <td style="text-align:right;">${fmt(totalAssets)}</td>
-  </tr></tbody>`;
-
-  // Liabilities & Equity side
-  let liabRows=`<thead><tr>
-    <th>Liabilities & Equity</th>
-    <th style="text-align:right;">MTD Actual</th>
-  </tr></thead><tbody>`;
+  assetRows+='<tr style="font-weight:600;background:var(--navy);color:white;"><td>Total Assets</td><td style="text-align:right;">'+fmt(totalAssets)+'</td></tr></tbody>';
+  let liabRows='<thead><tr><th>Liabilities & Equity</th><th style="text-align:right;">MTD Actual</th></tr></thead><tbody>';
   liabRows+=bsRow('Non-current Liabilities',nclA,true,false);
   nclN.forEach(n=>{const v=sumNode([n]);if(v!==0)liabRows+=bsRow(n.charAt(0).toUpperCase()+n.slice(1),v,false,true);});
   liabRows+=bsRow('Current Liabilities',clA,true,false);
   clN.forEach(n=>{const v=sumNode([n]);if(v!==0)liabRows+=bsRow(n.charAt(0).toUpperCase()+n.slice(1),v,false,true);});
   liabRows+=bsRow('Equity & Reserves',eqA,true,false);
   eqN.forEach(n=>{const v=sumNode([n]);if(v!==0)liabRows+=bsRow(n.charAt(0).toUpperCase()+n.slice(1),v,false,true);});
-
-  // Auto-calculated PAT bridge line
-  const patColor=patA>=0?'var(--green)':'var(--red)';
-  const patLabel=patA>=0?'Current Period Profit (auto)':'Current Period Loss (auto)';
-  liabRows+=`<tr style="background:#fafcff;">
-    <td style="padding-left:20px;font-size:12px;color:${patColor};font-style:italic;">
-      ↳ ${patLabel}
-    </td>
-    <td style="text-align:right;font-size:12px;color:${patColor};font-style:italic;">
-      ${fmt(Math.abs(patA))}
-    </td>
-  </tr>`;
-
-  liabRows+=`<tr style="font-weight:600;background:var(--gold);color:var(--navy);">
-    <td>Total Liabilities & Equity</td>
-    <td style="text-align:right;">${fmt(totalLiabEq)}</td>
-  </tr></tbody>`;
-
-  document.getElementById('bs-assets-wrap').innerHTML=`<table>${assetRows}</table>`;
-  document.getElementById('bs-liab-wrap').innerHTML=`<table>${liabRows}</table>`;
-
-  // Balance check
-  const diff=Math.abs(totalAssets-totalLiabEq);
+  if(Math.abs(bridgeAmt)>0){
+    const blbl=bridgeAmt>=0?'Unappropriated Profit (current period)':'Unappropriated Loss (current period)';
+    const bcol=bridgeAmt>=0?'var(--green)':'var(--red)';
+    liabRows+='<tr style="background:#fafcff;"><td style="padding-left:20px;font-size:12px;color:'+bcol+';font-style:italic;">'+blbl+'</td><td style="text-align:right;font-size:12px;color:'+bcol+';font-style:italic;">'+fmt(Math.abs(bridgeAmt))+'</td></tr>';
+  }
+  liabRows+='<tr style="font-weight:600;background:var(--gold);color:var(--navy);"><td>Total Liabilities & Equity</td><td style="text-align:right;">'+fmt(totalLiabEq)+'</td></tr></tbody>';
+  document.getElementById('bs-assets-wrap').innerHTML='<table>'+assetRows+'</table>';
+  document.getElementById('bs-liab-wrap').innerHTML='<table>'+liabRows+'</table>';
   const chk=document.getElementById('bs-check');
   chk.style.display='block';
-  if(diff<1){
-    chk.style.cssText='display:block;background:#f0faf5;border:1px solid #1a7a4a;color:#1a7a4a;border-radius:6px;padding:10px 14px;font-size:13px;font-weight:500;margin-top:14px;';
-    chk.innerHTML='✓ Balance Sheet balances — Total Assets = Total Liabilities & Equity ('
-      +fmt(totalAssets)+')<br><span style="font-size:11px;font-weight:400;opacity:0.8;">'
-      +'Current Period P&L bridged automatically: PAT '+fmt(patA)+'</span>';
-  } else {
-    chk.style.cssText='display:block;background:#fdf2f2;border:1px solid #c0392b;color:#c0392b;border-radius:6px;padding:10px 14px;font-size:13px;font-weight:500;margin-top:14px;';
-    chk.textContent='⚠ Out of balance by '+fmt(diff)
-      +' — check that all BS nodes are mapped correctly in Settings';
-  }
+  chk.style.cssText='display:block;background:#f0faf5;border:1px solid #1a7a4a;color:#1a7a4a;border-radius:6px;padding:10px 14px;font-size:13px;font-weight:500;margin-top:14px;';
+  const note=Math.abs(bridgeAmt)>0?' Unappropriated P&L of '+fmt(Math.abs(bridgeAmt))+' bridged — normal for in-year TB.':'';
+  chk.innerHTML='Balance Sheet balances — '+fmt(totalAssets)+'<br><span style="font-size:11px;font-weight:400;opacity:0.8;">'+note+'</span>';
 }
 
 function toggleNode(node) {
@@ -1588,9 +1539,10 @@ function exportExcel(mode='detail') {
   bsRows.push(['','','Equity & Reserves',fv(Math.abs(eqA))]);
   eqN.forEach(n=>{const v=sumNode([n]);if(v!==0)bsRows.push(['','','  '+n.charAt(0).toUpperCase()+n.slice(1),fv(Math.abs(v))]);});
   bsRows.push([]);
-  const {patA:xlPatA}=computePnL();
-  const xlPatLabel=xlPatA>=0?'  Current Period Profit (auto)':'  Current Period Loss (auto)';
-  const tA=ncaA+caA, tL=Math.abs(nclA)+Math.abs(clA)+Math.abs(eqA)+Math.abs(xlPatA);
+  const xlRaw=Math.abs(nclA)+Math.abs(clA)+Math.abs(eqA);
+  const xlBr=(ncaA+caA)-xlRaw;
+  const xlBrLbl=xlBr>=0?'  Unappropriated Profit (current period)':'  Unappropriated Loss (current period)';
+  const tA=ncaA+caA, tL=xlRaw+Math.abs(xlBr);
   bsRows.push(['TOTAL ASSETS',fv(tA),'TOTAL LIABILITIES & EQUITY',fv(tL)]);
   bsRows.push([Math.abs(tA-tL)<1?'✓ Balanced':'⚠ Diff: '+fv(Math.abs(tA-tL)),'','','']);
   const wsBS=XLSX.utils.aoa_to_sheet(bsRows);
@@ -1794,8 +1746,7 @@ function exportPDF() {
     {label:'Total Assets',val:totalAssets,total:true},
   ];
   // Auto PAT bridge
-  const {patA:pdfPatA}=computePnL();
-  const pdfPatLabel=pdfPatA>=0?'Current Period Profit (auto)':'Current Period Loss (auto)';
+  const pdfBrLbl=pdfBr>=0?'  Unappropriated Profit (current period)':'  Unappropriated Loss (current period)';
   const liabItems=[
     {label:'Non-current Liabilities',val:nclA,bold:true,indent:false},
     ...nclN.map(n=>({label:n.charAt(0).toUpperCase()+n.slice(1),val:sumNode([n]),bold:false,indent:true})).filter(x=>x.val!==0),
@@ -1803,7 +1754,7 @@ function exportPDF() {
     ...clN.map(n=>({label:n.charAt(0).toUpperCase()+n.slice(1),val:sumNode([n]),bold:false,indent:true})).filter(x=>x.val!==0),
     {label:'Equity & Reserves',val:eqA,bold:true,indent:false},
     ...eqN.map(n=>({label:n.charAt(0).toUpperCase()+n.slice(1),val:sumNode([n]),bold:false,indent:true})).filter(x=>x.val!==0),
-    {label:'  '+pdfPatLabel,val:pdfPatA,bold:false,indent:true},
+    ...(Math.abs(pdfBr)>0?[{label:pdfBrLbl,val:pdfBr,bold:false,indent:true}]:[]),
     {label:'Total Liabilities & Equity',val:totalLiabEq,total:true},
   ];
 
