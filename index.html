@@ -809,6 +809,9 @@ function handleUpload(e) {
   const f=e.target.files[0]; if(!f) return;
   const ext=f.name.split('.').pop().toLowerCase();
   const reader=new FileReader();
+
+  reader.onerror=()=>alert('Could not read file. Please try again.');
+
   reader.onload=ev=>{
     try {
       let rows=[];
@@ -816,24 +819,26 @@ function handleUpload(e) {
         const lines=ev.target.result.trim().split('\n');
         rows=lines.map(l=>l.split(',').map(x=>x.trim().replace(/"/g,'')));
       } else {
-        const wb=XLSX.read(ev.target.result,{type:'array'});
+        const wb=XLSX.read(ev.target.result,{type:'array',cellFormula:false,cellNF:false});
         const ws=wb.Sheets[wb.SheetNames[0]];
-        rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
-        rows=rows.filter(r=>r.some(c=>c!==''));
+        rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:'',raw:true});
       }
+
+      // Remove fully empty rows
+      rows=rows.filter(r=>r.some(c=>c!==''&&c!==null&&c!==undefined));
       if(!rows.length){alert('File appears empty.');return;}
 
-      // ── Smart header detection ────────────────────────
-      const keyNames=['account','mtd actual','mtd budget','actual','budget'];
-      let headerRowIdx=0;
+      // Smart header detection — find row with 3+ of these keywords
+      const KEY=['account','node','mtd actual','mtd budget','ytd actual','ytd budget','contact'];
+      let hIdx=0;
       for(let i=0;i<Math.min(10,rows.length);i++){
-        const rowLower=rows[i].map(x=>String(x).toLowerCase().trim());
-        const hits=keyNames.filter(k=>rowLower.some(c=>c.includes(k)));
-        if(hits.length>=2){headerRowIdx=i;break;}
+        const low=rows[i].map(x=>String(x).toLowerCase().trim());
+        const hits=KEY.filter(k=>low.some(c=>c.includes(k)));
+        if(hits.length>=3){hIdx=i;break;}
       }
 
-      const h=rows[headerRowIdx].map(x=>String(x).trim());
-      const find=(names)=>{
+      const h=rows[hIdx].map(x=>String(x).trim());
+      const col=(names)=>{
         for(const n of names){
           const i=h.findIndex(x=>x.toLowerCase().includes(n.toLowerCase()));
           if(i>=0)return i;
@@ -841,53 +846,62 @@ function handleUpload(e) {
         return -1;
       };
 
-      const iA=find(['account','gl account','description','account name']);
-      const iN=find(['node','category','section','group','type']);
-      const iMA=find(['mtd actual','actual mtd','current month','mtd act']);
-      const iMB=find(['mtd budget','budget mtd','mtd bud']);
-      const iYA=find(['ytd actual','actual ytd','ytd act']);
-      const iYB=find(['ytd budget','budget ytd','ytd bud']);
-      const iCE=find(['contact email','email','owner email','responsible email']);
-      const iCN=find(['contact name','owner','responsible','owner name']);
+      const iA =col(['account','gl account','description','account name']);
+      const iN =col(['node','category','section','group']);
+      const iMA=col(['mtd actual','actual mtd','current month','mtd act']);
+      const iMB=col(['mtd budget','budget mtd','mtd bud']);
+      const iYA=col(['ytd actual','actual ytd','ytd act']);
+      const iYB=col(['ytd budget','budget ytd','ytd bud']);
+      const iCE=col(['contact email','owner email','email']);
+      const iCN=col(['contact name','owner name','contact','owner']);
 
-      const missing=[];
-      if(iA<0)missing.push('Account');
-      if(iMA<0)missing.push('MTD Actual');
-      if(iMB<0)missing.push('MTD Budget');
-      if(missing.length){
-        alert('Could not find columns: '+missing.join(', ')+'\n\nColumns detected in your file:\n'+h.filter(x=>x).join(', ')+'\n\nPlease use the Download Template or Column Mapper.');
+      if(iA<0||iMA<0||iMB<0){
+        alert('Could not detect required columns.\n\nDetected: '+h.filter(x=>x).join(', ')+'\n\nExpected: Account, MTD Actual, MTD Budget (and optionally Node, YTD, Contact)');
         return;
       }
 
-      appData=rows.slice(headerRowIdx+1).map(r=>{
-        const g=(i)=>i>=0?r[i]:'';
+      appData=rows.slice(hIdx+1).map(r=>{
+        const g=i=>i>=0&&i<r.length?r[i]:'';
         const acct=String(g(iA)).trim();
-        if(!acct||acct==='undefined')return null;
-        const ma=parseFloat(g(iMA));
-        if(isNaN(ma)&&iMA>=0)return null;
+        // Skip blank rows and section header rows (no numeric actual)
+        if(!acct||acct.length===0) return null;
+        const maRaw=g(iMA);
+        const ma=typeof maRaw==='number'?maRaw:parseFloat(String(maRaw).replace(/,/g,''));
+        if(isNaN(ma)) return null; // section header row — no numeric value
+        const mbRaw=g(iMB);
+        const mb=typeof mbRaw==='number'?mbRaw:parseFloat(String(mbRaw).replace(/,/g,''))||0;
+        const yaRaw=g(iYA);
+        const ya=typeof yaRaw==='number'?yaRaw:parseFloat(String(yaRaw).replace(/,/g,''))||0;
+        const ybRaw=g(iYB);
+        const yb=typeof ybRaw==='number'?ybRaw:parseFloat(String(ybRaw).replace(/,/g,''))||0;
         return {
           a:acct,
-          node:String(g(iN)||'Other').trim(),
-          ma:parseFloat(g(iMA))||0,
-          mb:parseFloat(g(iMB))||0,
-          ya:parseFloat(g(iYA))||0,
-          yb:parseFloat(g(iYB))||0,
+          node:String(g(iN)||'Other').trim()||'Other',
+          ma, mb, ya, yb,
           ce:String(g(iCE)).trim(),
           cn:String(g(iCN)).trim()
         };
-      }).filter(r=>r&&r.a&&r.a!=='undefined'&&r.a!=='Account');
+      }).filter(r=>r&&r.a&&r.a!=='Account'&&r.a!=='S.No');
 
       if(!appData.length){
-        alert('No data rows found after the header. Please check the file format.');
+        alert('No valid data rows found.\nCheck that your MTD Actual column contains numbers.');
         return;
       }
 
-      renderPreview(); renderContactMap();
+      // Show success
+      const nodeList=[...new Set(appData.map(r=>r.node))];
+      console.log('Loaded '+appData.length+' rows across nodes: '+nodeList.join(', '));
+
+      renderPreview();
+      renderContactMap();
       document.getElementById('data-preview').scrollIntoView({behavior:'smooth'});
+
     } catch(err){
-      alert('Error reading file: '+err.message+'\n\nPlease download the template to see the expected format.');
+      console.error('Upload error:', err);
+      alert('Error reading file: '+err.message+'\n\nTip: Save the file as .xlsx from Excel and try again.');
     }
   };
+
   if(ext==='csv') reader.readAsText(f);
   else reader.readAsArrayBuffer(f);
 }
@@ -1263,8 +1277,6 @@ function getNodes(textareaId, fallback=[]) {
   return el.value.split('\n').map(x=>x.trim().toLowerCase()).filter(x=>x);
 }
 
-
-function sumNode
 
 function sumNode(nodeList, field='ma') {
   if(!nodeList||!nodeList.length) return 0;
