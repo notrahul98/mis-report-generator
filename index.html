@@ -1240,27 +1240,87 @@ function renderContactMap() {
   ).join('');
 }
 
-function getNodes(textareaId) {
+// Default IFRS node classification — used as fallback when settings not visited
+const PNL_DEFAULTS={
+  revenue:['revenue','other income'],
+  direct:['direct costs'],
+  overhead:['overheads'],
+  depn:['depreciation','depreciation & amortisation'],
+  finance:['finance costs'],
+  tax:['tax','taxation']
+};
+const BS_DEFAULTS={
+  nca:['fixed assets','right-of-use assets','intangible assets','long-term investments'],
+  ca:['inventory','trade receivables','current assets','short-term investments','cash and bank'],
+  cl:['current liabilities','trade payables','short-term borrowings'],
+  ncl:['loans and borrowings','lease liabilities','deferred tax liability','long-term liabilities'],
+  eq:['equity','reserves and surplus','retained earnings']
+};
+
+function getNodes(textareaId, fallback=[]) {
   const el=document.getElementById(textareaId);
-  if(!el) return [];
+  if(!el||!el.value.trim()) return fallback;
   return el.value.split('\n').map(x=>x.trim().toLowerCase()).filter(x=>x);
 }
 
+
+function sumNode
+
 function sumNode(nodeList, field='ma') {
+  if(!nodeList||!nodeList.length) return 0;
   return appData.filter(r=>nodeList.some(n=>r.node.toLowerCase().trim()===n.toLowerCase().trim())).reduce((s,r)=>s+(parseFloat(r[field])||0),0);
+}
+
+function computePnL() {
+  const revN=getNodes('pnl-revenue',PNL_DEFAULTS.revenue);
+  const dirN=getNodes('pnl-direct',PNL_DEFAULTS.direct);
+  const ohN=getNodes('pnl-overhead',PNL_DEFAULTS.overhead);
+  const depN=getNodes('pnl-depn',PNL_DEFAULTS.depn);
+  const finN=getNodes('pnl-finance',PNL_DEFAULTS.finance);
+  const taxN=getNodes('pnl-tax',PNL_DEFAULTS.tax);
+  const s=(n,f)=>sumNode(n,f);
+  const revA=s(revN,'ma'),revB=s(revN,'mb'),revYA=s(revN,'ya'),revYB=s(revN,'yb');
+  const dirA=s(dirN,'ma'),dirB=s(dirN,'mb'),dirYA=s(dirN,'ya'),dirYB=s(dirN,'yb');
+  const ohA=s(ohN,'ma'),ohB=s(ohN,'mb'),ohYA=s(ohN,'ya'),ohYB=s(ohN,'yb');
+  const depA=s(depN,'ma'),depB=s(depN,'mb'),depYA=s(depN,'ya'),depYB=s(depN,'yb');
+  const finA=s(finN,'ma'),finB=s(finN,'mb'),finYA=s(finN,'ya'),finYB=s(finN,'yb');
+  const taxA=s(taxN,'ma'),taxB=s(taxN,'mb'),taxYA=s(taxN,'ya'),taxYB=s(taxN,'yb');
+  const gpA=revA-dirA,gpB=revB-dirB,gpYA=revYA-dirYA,gpYB=revYB-dirYB;
+  const ebitdaA=gpA-ohA,ebitdaB=gpB-ohB,ebitdaYA=gpYA-ohYA,ebitdaYB=gpYB-ohYB;
+  const ebitA=ebitdaA-depA,ebitB=ebitdaB-depB,ebitYA=ebitdaYA-depYA,ebitYB=ebitdaYB-depYB;
+  const pbtA=ebitA-finA,pbtB=ebitB-finB,pbtYA=ebitYA-finYA,pbtYB=ebitYB-finYB;
+  const patA=pbtA-taxA,patB=pbtB-taxB,patYA=pbtYA-taxYA,patYB=pbtYB-taxYB;
+  return {revA,revB,revYA,revYB,dirA,dirB,dirYA,dirYB,ohA,ohB,ohYA,ohYB,
+          depA,depB,depYA,depYB,finA,finB,finYA,finYB,taxA,taxB,taxYA,taxYB,
+          gpA,gpB,gpYA,gpYB,ebitdaA,ebitdaB,ebitdaYA,ebitdaYB,
+          ebitA,ebitB,ebitYA,ebitYB,pbtA,pbtB,pbtYA,pbtYB,patA,patB,patYA,patYB};
+}
+
+function computeBS() {
+  const ncaN=getNodes('bs-nca',BS_DEFAULTS.nca);
+  const caN=getNodes('bs-ca',BS_DEFAULTS.ca);
+  const clN=getNodes('bs-cl',BS_DEFAULTS.cl);
+  const nclN=getNodes('bs-ncl',BS_DEFAULTS.ncl);
+  const eqN=getNodes('bs-eq',BS_DEFAULTS.eq);
+  return {
+    ncaN,caN,clN,nclN,eqN,
+    ncaA:sumNode(ncaN),caA:sumNode(caN),
+    clA:sumNode(clN),nclA:sumNode(nclN),eqA:sumNode(eqN)
+  };
 }
 
 function renderPnL() {
   if(!appData.length) return;
-  const revN=getNodes('pnl-revenue'), dirN=getNodes('pnl-direct');
-  const ohN=getNodes('pnl-overhead'), depN=getNodes('pnl-depn');
-  const finN=getNodes('pnl-finance'), taxN=getNodes('pnl-tax');
-  const s=(nodes,f)=>sumNode(nodes,f);
+  const p=computePnL();
+  const {revA,revB,revYA,revYB,dirA,dirB,dirYA,dirYB,ohA,ohB,ohYA,ohYB,
+         depA,depB,depYA,depYB,finA,finB,finYA,finYB,taxA,taxB,taxYA,taxYB,
+         gpA,gpB,gpYA,gpYB,ebitdaA,ebitdaB,ebitdaYA,ebitdaYB,
+         ebitA,ebitB,ebitYA,ebitYB,pbtA,pbtB,pbtYA,pbtYB,patA,patB,patYA,patYB}=p;
+  const taxRateA=pbtA?taxA/pbtA*100:0;
   const row=(label,ma,mb,ya,yb,bold,indent)=>{
-    const mv=ma-mb, yv=ya-yb;
-    const mp=mb?mv/mb*100:0, yp=yb?yv/yb*100:0;
-    const pct=ma&&(ma-mb)?`<td style="font-size:11px;" class="${varCls(mp)}">${fmtP(mp)}</td>`:'<td></td>';
-    const ypct=ya&&(ya-yb)?`<td style="font-size:11px;" class="${varCls(yp)}">${fmtP(yp)}</td>`:'<td></td>';
+    const mv=ma-mb,yv=ya-yb,mp=mb?mv/mb*100:0,yp=yb?yv/yb*100:0;
+    const pct=`<td style="font-size:11px;" class="${varCls(mp)}">${fmtP(mp)}</td>`;
+    const ypct=`<td style="font-size:11px;" class="${varCls(yp)}">${fmtP(yp)}</td>`;
     const st=bold?'font-weight:600;background:#f1f5fb;':'';
     const pl=indent?'padding-left:20px;font-size:12px;':'';
     return `<tr style="${st}"><td style="${pl}">${label}</td>
@@ -1271,26 +1331,8 @@ function renderPnL() {
   };
   const pctRow=(label,val,base)=>{
     const p=base?val/base*100:0;
-    return `<tr style="background:#fafcff;font-size:11px;color:var(--slate-light);"><td style="padding-left:20px;">${label}</td><td colspan="7">${p.toFixed(1)}%</td></tr>`;
+    return `<tr style="background:#fafcff;font-size:11px;color:var(--slate-light);"><td style="padding-left:20px;">${label}</td><td colspan="8">${p.toFixed(1)}%</td></tr>`;
   };
-  const revA=s(revN,'ma'), revB=s(revN,'mb'), revYA=s(revN,'ya'), revYB=s(revN,'yb');
-  const dirA=s(dirN,'ma'), dirB=s(dirN,'mb'), dirYA=s(dirN,'ya'), dirYB=s(dirN,'yb');
-  const ohA=s(ohN,'ma'), ohB=s(ohN,'mb'), ohYA=s(ohN,'ya'), ohYB=s(ohN,'yb');
-  const depA=s(depN,'ma'), depB=s(depN,'mb'), depYA=s(depN,'ya'), depYB=s(depN,'yb');
-  const finA=s(finN,'ma'), finB=s(finN,'mb'), finYA=s(finN,'ya'), finYB=s(finN,'yb');
-  const taxA=s(taxN,'ma'), taxB=s(taxN,'mb'), taxYA=s(taxN,'ya'), taxYB=s(taxN,'yb');
-  const gpA=revA-dirA, gpB=revB-dirB, gpYA=revYA-dirYA, gpYB=revYB-dirYB;
-  const ebitdaA=gpA-ohA, ebitdaB=gpB-ohB, ebitdaYA=gpYA-ohYA, ebitdaYB=gpYB-ohYB;
-  const ebitA=ebitdaA-depA, ebitB=ebitdaB-depB, ebitYA=ebitdaYA-depYA, ebitYB=ebitdaYB-depYB;
-  const pbtA=ebitA-finA, pbtB=ebitB-finB, pbtYA=ebitYA-finYA, pbtYB=ebitYB-finYB;
-  const patA=pbtA-taxA, patB=pbtB-taxB, patYA=pbtYA-taxYA, patYB=pbtYB-taxYB;
-  const taxRateA=pbtA?taxA/pbtA*100:0;
-  const showGP=document.getElementById('tog-gp')?.classList.contains('on');
-  const showEBITDA=document.getElementById('tog-ebitda')?.classList.contains('on');
-  const showEBIT=document.getElementById('tog-ebit')?.classList.contains('on');
-  const showPBT=document.getElementById('tog-pbt')?.classList.contains('on');
-  const showPAT=document.getElementById('tog-pat')?.classList.contains('on');
-  const showTR=document.getElementById('tog-taxrate')?.classList.contains('on');
   let rows=`<thead><tr>
     <th style="min-width:160px;">Line Item</th>
     <th>MTD Actual</th><th>MTD Budget</th><th>MTD Var</th><th>MTD Var%</th>
@@ -1298,31 +1340,21 @@ function renderPnL() {
   </tr></thead><tbody>`;
   rows+=row('Revenue',revA,revB,revYA,revYB,true,false);
   rows+=row('Less: Direct Costs',dirA,dirB,dirYA,dirYB,false,true);
-  if(showGP){
-    rows+=row('Gross Profit',gpA,gpB,gpYA,gpYB,true,false);
-    rows+=pctRow('GP Margin',gpA,revA);
-  }
+  rows+=row('Gross Profit',gpA,gpB,gpYA,gpYB,true,false);
+  rows+=pctRow('GP Margin',gpA,revA);
   rows+=row('Less: Overheads',ohA,ohB,ohYA,ohYB,false,true);
-  if(showEBITDA){
-    rows+=row('EBITDA',ebitdaA,ebitdaB,ebitdaYA,ebitdaYB,true,false);
-    rows+=pctRow('EBITDA Margin',ebitdaA,revA);
-  }
+  rows+=row('EBITDA',ebitdaA,ebitdaB,ebitdaYA,ebitdaYB,true,false);
+  rows+=pctRow('EBITDA Margin',ebitdaA,revA);
   rows+=row('Less: Depreciation',depA,depB,depYA,depYB,false,true);
-  if(showEBIT){
-    rows+=row('EBIT',ebitA,ebitB,ebitYA,ebitYB,true,false);
-    rows+=pctRow('EBIT Margin',ebitA,revA);
-  }
+  rows+=row('EBIT',ebitA,ebitB,ebitYA,ebitYB,true,false);
+  rows+=pctRow('EBIT Margin',ebitA,revA);
   rows+=row('Less: Finance Costs',finA,finB,finYA,finYB,false,true);
-  if(showPBT){
-    rows+=row('PBT',pbtA,pbtB,pbtYA,pbtYB,true,false);
-    rows+=pctRow('PBT Margin',pbtA,revA);
-  }
+  rows+=row('PBT',pbtA,pbtB,pbtYA,pbtYB,true,false);
+  rows+=pctRow('PBT Margin',pbtA,revA);
+  rows+=`<tr style="font-size:11px;color:var(--slate-light);background:#fafcff;"><td style="padding-left:20px;">Effective Tax Rate</td><td colspan="8">${taxRateA.toFixed(1)}%</td></tr>`;
   rows+=row('Less: Tax',taxA,taxB,taxYA,taxYB,false,true);
-  if(showTR) rows+=`<tr style="font-size:11px;color:var(--slate-light);background:#fafcff;"><td style="padding-left:20px;">Effective Tax Rate</td><td colspan="7">${taxRateA.toFixed(1)}%</td></tr>`;
-  if(showPAT){
-    rows+=row('PAT (Net Profit)',patA,patB,patYA,patYB,true,false);
-    rows+=pctRow('PAT Margin',patA,revA);
-  }
+  rows+=row('PAT (Net Profit)',patA,patB,patYA,patYB,true,false);
+  rows+=pctRow('PAT Margin',patA,revA);
   rows+='</tbody>';
   document.getElementById('pnl-section').style.display='block';
   document.getElementById('pnl-wrap').innerHTML=`<table>${rows}</table>`;
@@ -1330,42 +1362,23 @@ function renderPnL() {
 
 function renderRatios() {
   if(!appData.length) return;
-  const revN=getNodes('pnl-revenue'), dirN=getNodes('pnl-direct');
-  const ohN=getNodes('pnl-overhead'), depN=getNodes('pnl-depn');
-  const finN=getNodes('pnl-finance'), taxN=getNodes('pnl-tax');
-  const caN=getNodes('bs-ca'), clN=getNodes('bs-cl');
-  const ncaN=getNodes('bs-nca'), nclN=getNodes('bs-ncl'), eqN=getNodes('bs-eq');
-  const bsNclN=getNodes('bs-ncl');
-  const s=(nodes,f='ma')=>sumNode(nodes,f);
-  const revA=s(revN), dirA=s(dirN), ohA=s(ohN), depA=s(depN), finA=s(finN), taxA=s(taxN);
-  const gpA=revA-dirA, ebitdaA=gpA-ohA, ebitA=ebitdaA-depA, pbtA=ebitA-finA, patA=pbtA-taxA;
-  const caA=s(caN), clA=s(clN), ncaA=s(ncaN), nclA=s(nclN), eqA=s(eqN);
-  const debt=nclA+clA;
+  const {revA,gpA,ebitdaA,ebitA,pbtA,patA,taxA,finA}=computePnL();
+  const {ncaA,caA,clA,nclA,eqA}=computeBS();
+  const debt=nclA+Math.abs(clA);
+  const tog=id=>document.getElementById(id)?.classList.contains('on');
   const ratios=[];
-  if(document.getElementById('tog-gp')?.classList.contains('on'))
-    ratios.push({l:'GP Margin',v:revA?(gpA/revA*100).toFixed(1)+'%':'N/A'});
-  if(document.getElementById('tog-ebitda')?.classList.contains('on'))
-    ratios.push({l:'EBITDA Margin',v:revA?(ebitdaA/revA*100).toFixed(1)+'%':'N/A'});
-  if(document.getElementById('tog-ebit')?.classList.contains('on'))
-    ratios.push({l:'EBIT Margin',v:revA?(ebitA/revA*100).toFixed(1)+'%':'N/A'});
-  if(document.getElementById('tog-pbt')?.classList.contains('on'))
-    ratios.push({l:'PBT Margin',v:revA?(pbtA/revA*100).toFixed(1)+'%':'N/A'});
-  if(document.getElementById('tog-pat')?.classList.contains('on'))
-    ratios.push({l:'PAT Margin',v:revA?(patA/revA*100).toFixed(1)+'%':'N/A'});
-  if(document.getElementById('tog-taxrate')?.classList.contains('on'))
-    ratios.push({l:'Eff. Tax Rate',v:pbtA?(taxA/pbtA*100).toFixed(1)+'%':'N/A'});
-  if(document.getElementById('tog-cr')?.classList.contains('on'))
-    ratios.push({l:'Current Ratio',v:clA?(caA/clA).toFixed(2)+'x':'N/A'});
-  if(document.getElementById('tog-qr')?.classList.contains('on'))
-    ratios.push({l:'Quick Ratio',v:clA?((caA*0.7)/clA).toFixed(2)+'x':'N/A'});
-  if(document.getElementById('tog-wc')?.classList.contains('on'))
-    ratios.push({l:'Working Capital',v:fmt(caA-clA)});
-  if(document.getElementById('tog-de')?.classList.contains('on'))
-    ratios.push({l:'Debt / Equity',v:eqA?(debt/eqA).toFixed(2)+'x':'N/A'});
-  if(document.getElementById('tog-ic')?.classList.contains('on'))
-    ratios.push({l:'Interest Coverage',v:finA?(ebitA/finA).toFixed(2)+'x':'N/A'});
-  if(document.getElementById('tog-debitda')?.classList.contains('on'))
-    ratios.push({l:'Debt / EBITDA',v:ebitdaA?(debt/ebitdaA).toFixed(2)+'x':'N/A'});
+  if(tog('tog-gp'))   ratios.push({l:'GP Margin',v:revA?(gpA/revA*100).toFixed(1)+'%':'N/A'});
+  if(tog('tog-ebitda'))ratios.push({l:'EBITDA Margin',v:revA?(ebitdaA/revA*100).toFixed(1)+'%':'N/A'});
+  if(tog('tog-ebit')) ratios.push({l:'EBIT Margin',v:revA?(ebitA/revA*100).toFixed(1)+'%':'N/A'});
+  if(tog('tog-pbt'))  ratios.push({l:'PBT Margin',v:revA?(pbtA/revA*100).toFixed(1)+'%':'N/A'});
+  if(tog('tog-pat'))  ratios.push({l:'PAT Margin',v:revA?(patA/revA*100).toFixed(1)+'%':'N/A'});
+  if(tog('tog-taxrate'))ratios.push({l:'Eff. Tax Rate',v:pbtA?(taxA/pbtA*100).toFixed(1)+'%':'N/A'});
+  if(tog('tog-cr'))   ratios.push({l:'Current Ratio',v:clA?(caA/Math.abs(clA)).toFixed(2)+'x':'N/A'});
+  if(tog('tog-qr'))   ratios.push({l:'Quick Ratio',v:clA?((caA*0.7)/Math.abs(clA)).toFixed(2)+'x':'N/A'});
+  if(tog('tog-wc'))   ratios.push({l:'Working Capital',v:fmt(caA-Math.abs(clA))});
+  if(tog('tog-de'))   ratios.push({l:'Debt / Equity',v:eqA?(debt/Math.abs(eqA)).toFixed(2)+'x':'N/A'});
+  if(tog('tog-ic'))   ratios.push({l:'Interest Coverage',v:finA?(ebitA/finA).toFixed(2)+'x':'N/A'});
+  if(tog('tog-debitda'))ratios.push({l:'Debt / EBITDA',v:ebitdaA?(debt/ebitdaA).toFixed(2)+'x':'N/A'});
   if(!ratios.length){document.getElementById('ratios-section').style.display='none';return;}
   document.getElementById('ratios-section').style.display='block';
   document.getElementById('ratios-wrap').innerHTML=ratios.map(r=>
@@ -1377,68 +1390,40 @@ function renderBS() {
   if(!appData.length) return;
   const period=document.getElementById('s-period')?.value||'—';
   document.getElementById('bs-period-lbl').textContent=period;
-  const ncaN=getNodes('bs-nca'), caN=getNodes('bs-ca');
-  const clN=getNodes('bs-cl'), nclN=getNodes('bs-ncl'), eqN=getNodes('bs-eq');
-  const s=(nodes,f='ma')=>sumNode(nodes,f);
-  const ncaA=s(ncaN), caA=s(caN);
-  const clA=s(clN), nclA=s(nclN), eqA=s(eqN);
+  const {ncaN,caN,clN,nclN,eqN,ncaA,caA,clA,nclA,eqA}=computeBS();
   const totalAssets=ncaA+caA;
-  const totalLiabEq=nclA+clA+eqA;
+  const totalLiabEq=Math.abs(nclA)+Math.abs(clA)+Math.abs(eqA);
   const bsRow=(label,val,bold,indent)=>{
     const st=bold?'font-weight:600;background:#f1f5fb;':'';
     const pl=indent?'padding-left:20px;font-size:12px;':'';
-    return `<tr style="${st}"><td style="${pl}">${label}</td><td style="text-align:right;">${fmt(val)}</td></tr>`;
+    return `<tr style="${st}"><td style="${pl}">${label}</td><td style="text-align:right;">${fmt(Math.abs(val))}</td></tr>`;
   };
-  // Assets side
-  let assetRows=`<thead><tr><th>Assets</th><th style="text-align:right;">MTD Actual</th></tr></thead><tbody>`;
+  let assetRows=`<thead><tr><th>Assets</th><th style="text-align:right;">Actual</th></tr></thead><tbody>`;
   assetRows+=bsRow('Non-current Assets',ncaA,true,false);
-  getNodes('bs-nca').forEach(n=>{
-    const v=sumNode([n]);
-    if(v!==0) assetRows+=bsRow(n.charAt(0).toUpperCase()+n.slice(1),v,false,true);
-  });
+  ncaN.forEach(n=>{const v=sumNode([n]);if(v!==0)assetRows+=bsRow(n.charAt(0).toUpperCase()+n.slice(1),v,false,true);});
   assetRows+=bsRow('Current Assets',caA,true,false);
-  getNodes('bs-ca').forEach(n=>{
-    const v=sumNode([n]);
-    if(v!==0) assetRows+=bsRow(n.charAt(0).toUpperCase()+n.slice(1),v,false,true);
-  });
-  assetRows+=`<tr style="font-weight:600;background:var(--navy);color:white;"><td>Total Assets</td><td style="text-align:right;">${fmt(totalAssets)}</td></tr>`;
-  assetRows+='</tbody>';
-  // Liabilities side
-  let liabRows=`<thead><tr><th>Liabilities & Equity</th><th style="text-align:right;">MTD Actual</th></tr></thead><tbody>`;
+  caN.forEach(n=>{const v=sumNode([n]);if(v!==0)assetRows+=bsRow(n.charAt(0).toUpperCase()+n.slice(1),v,false,true);});
+  assetRows+=`<tr style="font-weight:600;background:var(--navy);color:white;"><td>Total Assets</td><td style="text-align:right;">${fmt(totalAssets)}</td></tr></tbody>`;
+  let liabRows=`<thead><tr><th>Liabilities & Equity</th><th style="text-align:right;">Actual</th></tr></thead><tbody>`;
   liabRows+=bsRow('Non-current Liabilities',nclA,true,false);
-  getNodes('bs-ncl').forEach(n=>{
-    const v=sumNode([n]);
-    if(v!==0) liabRows+=bsRow(n.charAt(0).toUpperCase()+n.slice(1),v,false,true);
-  });
+  nclN.forEach(n=>{const v=sumNode([n]);if(v!==0)liabRows+=bsRow(n.charAt(0).toUpperCase()+n.slice(1),v,false,true);});
   liabRows+=bsRow('Current Liabilities',clA,true,false);
-  getNodes('bs-cl').forEach(n=>{
-    const v=sumNode([n]);
-    if(v!==0) liabRows+=bsRow(n.charAt(0).toUpperCase()+n.slice(1),v,false,true);
-  });
+  clN.forEach(n=>{const v=sumNode([n]);if(v!==0)liabRows+=bsRow(n.charAt(0).toUpperCase()+n.slice(1),v,false,true);});
   liabRows+=bsRow('Equity & Reserves',eqA,true,false);
-  getNodes('bs-eq').forEach(n=>{
-    const v=sumNode([n]);
-    if(v!==0) liabRows+=bsRow(n.charAt(0).toUpperCase()+n.slice(1),v,false,true);
-  });
-  liabRows+=`<tr style="font-weight:600;background:var(--gold);color:var(--navy);"><td>Total Liabilities & Equity</td><td style="text-align:right;">${fmt(totalLiabEq)}</td></tr>`;
-  liabRows+='</tbody>';
+  eqN.forEach(n=>{const v=sumNode([n]);if(v!==0)liabRows+=bsRow(n.charAt(0).toUpperCase()+n.slice(1),v,false,true);});
+  liabRows+=`<tr style="font-weight:600;background:var(--gold);color:var(--navy);"><td>Total Liabilities & Equity</td><td style="text-align:right;">${fmt(totalLiabEq)}</td></tr></tbody>`;
   document.getElementById('bs-assets-wrap').innerHTML=`<table>${assetRows}</table>`;
   document.getElementById('bs-liab-wrap').innerHTML=`<table>${liabRows}</table>`;
-  // Balance check
-  const chk=document.getElementById('bs-check');
   const diff=Math.abs(totalAssets-totalLiabEq);
+  const chk=document.getElementById('bs-check');
   chk.style.display='block';
   if(diff<1){
-    chk.style.background='#f0faf5';chk.style.border='1px solid #1a7a4a';chk.style.color='#1a7a4a';
-    chk.textContent='✓ Balance Sheet balances — Assets = Liabilities & Equity ('+fmt(totalAssets)+')';
+    chk.style.cssText='display:block;background:#f0faf5;border:1px solid #1a7a4a;color:#1a7a4a;border-radius:6px;padding:10px 14px;font-size:13px;font-weight:500;margin-top:14px;';
+    chk.textContent='✓ Balance Sheet balances — Total Assets = Total Liabilities & Equity ('+fmt(totalAssets)+')';
   } else {
-    chk.style.background='#fdf2f2';chk.style.border='1px solid #c0392b';chk.style.color='#c0392b';
-    chk.textContent='⚠ Out of balance by '+fmt(diff)+' — check that all BS nodes are mapped in Settings';
+    chk.style.cssText='display:block;background:#fdf2f2;border:1px solid #c0392b;color:#c0392b;border-radius:6px;padding:10px 14px;font-size:13px;font-weight:500;margin-top:14px;';
+    chk.textContent='⚠ Out of balance by '+fmt(diff)+' — verify BS node mapping in Settings';
   }
-  document.getElementById('bs-alert').style.display=
-    appData.filter(r=>![...ncaN,...caN,...clN,...nclN,...eqN].includes(r.node.toLowerCase())).length?'block':'none';
-  document.getElementById('bs-alert').textContent=
-    'Some nodes are not mapped to Balance Sheet sections. Check Settings → Balance Sheet classification.';
 }
 
 function toggleNode(node) {
@@ -1485,276 +1470,306 @@ function downloadTemplate() {
 }
 
 function exportExcel(mode='detail') {
-  if(!appData.length){alert('No data to export. Load data first.');return;}
+  if(!appData.length){alert('Load data first.');return;}
   const period=document.getElementById('s-period')?.value||'Report';
   const company=document.getElementById('s-company')?.value||'Company';
   const sk=scale(), sc=cur();
   const fv=n=>+(n/sk).toFixed(1);
-  const nodes=[...new Set(appData.map(r=>r.node))];
   const wb=XLSX.utils.book_new();
+  const p=computePnL();
+  const {revA,revB,revYA,revYB,dirA,dirB,dirYA,dirYB,
+         ohA,ohB,ohYA,ohYB,depA,depB,depYA,depYB,
+         finA,finB,finYA,finYB,taxA,taxB,taxYA,taxYB,
+         gpA,gpB,gpYA,gpYB,ebitdaA,ebitdaB,ebitdaYA,ebitdaYB,
+         ebitA,ebitB,ebitYA,ebitYB,pbtA,pbtB,pbtYA,pbtYB,patA,patB,patYA,patYB}=p;
 
-  // ── P&L calcs ───────────────────────────────────────────────
-  const revN=getNodes('pnl-revenue'), dirN=getNodes('pnl-direct');
-  const ohN=getNodes('pnl-overhead'), depN=getNodes('pnl-depn');
-  const finN=getNodes('pnl-finance'), taxN=getNodes('pnl-tax');
-  const sm=(nodes,f)=>sumNode(nodes,f);
-  const revA=sm(revN,'ma'),revB=sm(revN,'mb'),revYA=sm(revN,'ya'),revYB=sm(revN,'yb');
-  const dirA=sm(dirN,'ma'),dirB=sm(dirN,'mb'),dirYA=sm(dirN,'ya'),dirYB=sm(dirN,'yb');
-  const ohA=sm(ohN,'ma'),ohB=sm(ohN,'mb'),ohYA=sm(ohN,'ya'),ohYB=sm(ohN,'yb');
-  const depA=sm(depN,'ma'),depB=sm(depN,'mb'),depYA=sm(depN,'ya'),depYB=sm(depN,'yb');
-  const finA=sm(finN,'ma'),finB=sm(finN,'mb'),finYA=sm(finN,'ya'),finYB=sm(finN,'yb');
-  const taxA=sm(taxN,'ma'),taxB=sm(taxN,'mb'),taxYA=sm(taxN,'ya'),taxYB=sm(taxN,'yb');
-  const gpA=revA-dirA,gpB=revB-dirB,gpYA=revYA-dirYA,gpYB=revYB-dirYB;
-  const ebitdaA=gpA-ohA,ebitdaB=gpB-ohB,ebitdaYA=gpYA-ohYA,ebitdaYB=gpYB-ohYB;
-  const ebitA=ebitdaA-depA,ebitB=ebitdaB-depB,ebitYA=ebitdaYA-depYA,ebitYB=ebitdaYB-depYB;
-  const pbtA=ebitA-finA,pbtB=ebitB-finB,pbtYA=ebitYA-finYA,pbtYB=ebitYB-finYB;
-  const patA=pbtA-taxA,patB=pbtB-taxB,patYA=pbtYA-taxYA,patYB=pbtYB-taxYB;
-
-  const addPnL=(rows,label,ma,mb,ya,yb,indent)=>{
+  const addR=(rows,lbl,ma,mb,ya,yb,indent)=>{
     const mv=ma-mb,yv=ya-yb,mp=mb?+(mv/mb*100).toFixed(1):0,yp=yb?+(yv/yb*100).toFixed(1):0;
-    rows.push([(indent?'  ':'')+label,fv(ma),fv(mb),fv(mv),mp+'%',fv(ya),fv(yb),fv(yv),yp+'%']);
+    rows.push([(indent?'  ':'')+lbl,fv(ma),fv(mb),fv(mv),mp+'%',fv(ya),fv(yb),fv(yv),yp+'%']);
   };
-  const addPct=(rows,label,val,base)=>rows.push(['    '+label,base?+(val/base*100).toFixed(1)+'%':'N/A','','','','','','','']);
+  const addP=(rows,lbl,val,base)=>rows.push(['    '+lbl,base?+(val/base*100).toFixed(1)+'%':'—','','','','','','','']);
 
-  // ── Sheet 1: P&L Summary (always included) ──────────────────
+  // ── Sheet 1: P&L ──────────────────────────────────────────
   const pnlRows=[];
-  pnlRows.push([company+' — P&L Summary','','','','Period: '+period,'','','','']);
-  pnlRows.push(['[LOGO PLACEHOLDER]','','','','','','','','']);
+  pnlRows.push([company+' — P&L Summary','','','','','Period: '+period,'','','']);
+  pnlRows.push(['[LOGO]','','','','','','','','']);
   pnlRows.push([]);
   pnlRows.push(['Line Item','MTD Actual','MTD Budget','MTD Variance','MTD Var%','YTD Actual','YTD Budget','YTD Variance','YTD Var%']);
-  addPnL(pnlRows,'Revenue',revA,revB,revYA,revYB,false);
-  addPnL(pnlRows,'Less: Direct Costs',dirA,dirB,dirYA,dirYB,true);
-  addPnL(pnlRows,'Gross Profit',gpA,gpB,gpYA,gpYB,false);
-  addPct(pnlRows,'GP Margin',gpA,revA);
-  addPnL(pnlRows,'Less: Overheads',ohA,ohB,ohYA,ohYB,true);
-  addPnL(pnlRows,'EBITDA',ebitdaA,ebitdaB,ebitdaYA,ebitdaYB,false);
-  addPct(pnlRows,'EBITDA Margin',ebitdaA,revA);
-  addPnL(pnlRows,'Less: Depreciation & Amort.',depA,depB,depYA,depYB,true);
-  addPnL(pnlRows,'EBIT',ebitA,ebitB,ebitYA,ebitYB,false);
-  addPct(pnlRows,'EBIT Margin',ebitA,revA);
-  addPnL(pnlRows,'Less: Finance Costs',finA,finB,finYA,finYB,true);
-  addPnL(pnlRows,'PBT (Profit Before Tax)',pbtA,pbtB,pbtYA,pbtYB,false);
-  addPct(pnlRows,'PBT Margin',pbtA,revA);
-  pnlRows.push(['    Effective Tax Rate',pbtA?(taxA/pbtA*100).toFixed(1)+'%':'N/A','','','','','','','']);
-  addPnL(pnlRows,'Less: Tax',taxA,taxB,taxYA,taxYB,true);
-  addPnL(pnlRows,'PAT (Net Profit)',patA,patB,patYA,patYB,false);
-  addPct(pnlRows,'PAT Margin',patA,revA);
+  addR(pnlRows,'Revenue',revA,revB,revYA,revYB,false);
+  addR(pnlRows,'  Direct Costs',dirA,dirB,dirYA,dirYB,true);
+  addR(pnlRows,'Gross Profit',gpA,gpB,gpYA,gpYB,false);
+  addP(pnlRows,'GP Margin',gpA,revA);
+  addR(pnlRows,'  Overheads',ohA,ohB,ohYA,ohYB,true);
+  addR(pnlRows,'EBITDA',ebitdaA,ebitdaB,ebitdaYA,ebitdaYB,false);
+  addP(pnlRows,'EBITDA Margin',ebitdaA,revA);
+  addR(pnlRows,'  Depreciation & Amort.',depA,depB,depYA,depYB,true);
+  addR(pnlRows,'EBIT',ebitA,ebitB,ebitYA,ebitYB,false);
+  addP(pnlRows,'EBIT Margin',ebitA,revA);
+  addR(pnlRows,'  Finance Costs',finA,finB,finYA,finYB,true);
+  addR(pnlRows,'PBT (Profit Before Tax)',pbtA,pbtB,pbtYA,pbtYB,false);
+  addP(pnlRows,'PBT Margin',pbtA,revA);
+  pnlRows.push(['    Eff. Tax Rate',pbtA?+(taxA/pbtA*100).toFixed(1)+'%':'—','','','','','','','']);
+  addR(pnlRows,'  Tax',taxA,taxB,taxYA,taxYB,true);
+  addR(pnlRows,'PAT (Net Profit)',patA,patB,patYA,patYB,false);
+  addP(pnlRows,'PAT Margin',patA,revA);
   const wsPnL=XLSX.utils.aoa_to_sheet(pnlRows);
   wsPnL['!cols']=[{wch:34},{wch:14},{wch:14},{wch:14},{wch:10},{wch:14},{wch:14},{wch:14},{wch:10}];
   XLSX.utils.book_append_sheet(wb,wsPnL,'P&L Summary');
 
-  // ── Sheet 2: Balance Sheet Summary ──────────────────────────
-  const ncaN=getNodes('bs-nca'),caN=getNodes('bs-ca'),clN=getNodes('bs-cl');
-  const nclN=getNodes('bs-ncl'),eqN=getNodes('bs-eq');
-  const ncaA=sumNode(ncaN),caA=sumNode(caN),clA=sumNode(clN),nclA=sumNode(nclN),eqA=sumNode(eqN);
+  // ── Sheet 2: Balance Sheet ────────────────────────────────
+  const {ncaN,caN,clN,nclN,eqN,ncaA,caA,clA,nclA,eqA}=computeBS();
   const bsRows=[];
-  bsRows.push([company+' — Balance Sheet Summary','','Period: '+period,'']);
-  bsRows.push(['[LOGO PLACEHOLDER]','','','']);
+  bsRows.push([company+' — Balance Sheet','','Period: '+period,'']);
+  bsRows.push(['[LOGO]','','','']);
   bsRows.push([]);
   bsRows.push(['ASSETS','Amount ('+sc+')','LIABILITIES & EQUITY','Amount ('+sc+')']);
-  bsRows.push(['Non-current Assets',fv(ncaA),'Non-current Liabilities',fv(nclA)]);
-  const maxRows=Math.max(ncaN.length,caN.length,nclN.length,clN.length,eqN.length);
-  ncaN.forEach((n,i)=>{const v=sumNode([n]);if(v!==0)bsRows.push(['  '+n.charAt(0).toUpperCase()+n.slice(1),fv(v),'','']);});
-  bsRows.push(['Current Assets',fv(caA),'Current Liabilities',fv(clA)]);
-  caN.forEach(n=>{const v=sumNode([n]);if(v!==0)bsRows.push(['  '+n.charAt(0).toUpperCase()+n.slice(1),fv(v),'','']);});
-  bsRows.push(['','','Equity & Reserves',fv(eqA)]);
-  eqN.forEach(n=>{const v=sumNode([n]);if(v!==0)bsRows.push(['','','  '+n.charAt(0).toUpperCase()+n.slice(1),fv(v)]);});
+  bsRows.push(['Non-current Assets',fv(ncaA),'Non-current Liabilities',fv(Math.abs(nclA))]);
+  ncaN.forEach(n=>{const v=sumNode([n]);if(v!==0)bsRows.push(['  '+n.charAt(0).toUpperCase()+n.slice(1),fv(Math.abs(v)),'','']);});
+  bsRows.push(['Current Assets',fv(caA),'Current Liabilities',fv(Math.abs(clA))]);
+  caN.forEach(n=>{const v=sumNode([n]);if(v!==0)bsRows.push(['  '+n.charAt(0).toUpperCase()+n.slice(1),fv(Math.abs(v)),'','']);});
+  bsRows.push(['','','Equity & Reserves',fv(Math.abs(eqA))]);
+  eqN.forEach(n=>{const v=sumNode([n]);if(v!==0)bsRows.push(['','','  '+n.charAt(0).toUpperCase()+n.slice(1),fv(Math.abs(v))]);});
   bsRows.push([]);
-  bsRows.push(['TOTAL ASSETS',fv(ncaA+caA),'TOTAL LIABILITIES & EQUITY',fv(nclA+clA+eqA)]);
-  const diff=Math.abs((ncaA+caA)-(nclA+clA+eqA));
-  bsRows.push([diff<1?'✓ Balance Sheet balances':'⚠ Difference: '+fv(diff),'','','']);
+  const tA=ncaA+caA, tL=Math.abs(nclA)+Math.abs(clA)+Math.abs(eqA);
+  bsRows.push(['TOTAL ASSETS',fv(tA),'TOTAL LIABILITIES & EQUITY',fv(tL)]);
+  bsRows.push([Math.abs(tA-tL)<1?'✓ Balanced':'⚠ Diff: '+fv(Math.abs(tA-tL)),'','','']);
   const wsBS=XLSX.utils.aoa_to_sheet(bsRows);
   wsBS['!cols']=[{wch:32},{wch:18},{wch:32},{wch:18}];
   XLSX.utils.book_append_sheet(wb,wsBS,'Balance Sheet');
 
   if(mode==='detail') {
     // ── Sheet 3: MIS Detail ──────────────────────────────────
+    const nodes=[...new Set(appData.map(r=>r.node))];
     const misRows=[];
-    misRows.push([company+' — MIS Report (Detail)','','','','','Period: '+period,'','','','','','']);
-    misRows.push(['[LOGO PLACEHOLDER]','','','','','','','','','','','']);
+    misRows.push([company+' — MIS Report Detail','','','','','Period: '+period,'','','','','','']);
     misRows.push([]);
     misRows.push(['Account','Node','MTD Actual','MTD Budget','MTD Variance','MTD Var%','YTD Actual','YTD Budget','YTD Variance','YTD Var%','Contact','Email']);
     nodes.forEach(node=>{
       const items=appData.filter(r=>r.node===node);
       const tma=items.reduce((s,r)=>s+r.ma,0),tmb=items.reduce((s,r)=>s+r.mb,0);
       const tya=items.reduce((s,r)=>s+r.ya,0),tyb=items.reduce((s,r)=>s+r.yb,0);
-      const mv=tma-tmb,yv=tya-tyb,mp=tmb?+(mv/tmb*100).toFixed(1):0,yp=tyb?+(yv/tyb*100).toFixed(1):0;
+      const mv=tma-tmb,mp=tmb?+(mv/tmb*100).toFixed(1):0;
+      const yv=tya-tyb,yp=tyb?+(yv/tyb*100).toFixed(1):0;
       misRows.push([node,'SUBTOTAL',fv(tma),fv(tmb),fv(mv),mp+'%',fv(tya),fv(tyb),fv(yv),yp+'%','','']);
       items.forEach(r=>{
-        const mv2=r.ma-r.mb,yv2=r.ya-r.yb,mp2=r.mb?+(mv2/r.mb*100).toFixed(1):0,yp2=r.yb?+(yv2/r.yb*100).toFixed(1):0;
+        const mv2=r.ma-r.mb,yv2=r.ya-r.yb;
+        const mp2=r.mb?+(mv2/r.mb*100).toFixed(1):0,yp2=r.yb?+(yv2/r.yb*100).toFixed(1):0;
         misRows.push(['  '+r.a,r.node,fv(r.ma),fv(r.mb),fv(mv2),mp2+'%',fv(r.ya),fv(r.yb),fv(yv2),yp2+'%',r.cn,r.ce]);
       });
     });
     const gma=appData.reduce((s,r)=>s+r.ma,0),gmb=appData.reduce((s,r)=>s+r.mb,0);
     const gya=appData.reduce((s,r)=>s+r.ya,0),gyb=appData.reduce((s,r)=>s+r.yb,0);
-    misRows.push(['GRAND TOTAL','',fv(gma),fv(gmb),fv(gma-gmb),gmb?+(((gma-gmb)/gmb)*100).toFixed(1)+'%':'0%',fv(gya),fv(gyb),fv(gya-gyb),gyb?+(((gya-gyb)/gyb)*100).toFixed(1)+'%':'0%','','']);
+    const gmv=gma-gmb,gyv=gya-gyb;
+    misRows.push(['GRAND TOTAL','',fv(gma),fv(gmb),fv(gmv),gmb?+(gmv/gmb*100).toFixed(1)+'%':'0%',fv(gya),fv(gyb),fv(gyv),gyb?+(gyv/gyb*100).toFixed(1)+'%':'0%','','']);
     const wsMIS=XLSX.utils.aoa_to_sheet(misRows);
-    wsMIS['!cols']=[{wch:28},{wch:18},{wch:14},{wch:14},{wch:14},{wch:10},{wch:14},{wch:14},{wch:14},{wch:10},{wch:20},{wch:28}];
+    wsMIS['!cols']=[{wch:28},{wch:18},{wch:13},{wch:13},{wch:13},{wch:9},{wch:13},{wch:13},{wch:13},{wch:9},{wch:20},{wch:26}];
     XLSX.utils.book_append_sheet(wb,wsMIS,'MIS Detail');
   }
 
-  XLSX.writeFile(wb,`${mode==='summary'?'Summary':'Report'}_${period}.xlsx`);
+  XLSX.writeFile(wb,(mode==='summary'?'Summary':'Report')+'_'+period+'.xlsx');
 }
 
 function exportPDF() {
-  if(!appData.length){alert('No data to export. Load data first.');return;}
+  if(!appData.length){alert('Load data first.');return;}
   const {jsPDF}=window.jspdf;
   const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
   const period=document.getElementById('s-period')?.value||'Report';
   const company=document.getElementById('s-company')?.value||'Company';
   const sk=scale(), sc=cur();
-  const fv=n=>sc+(n/sk).toLocaleString('en-IN',{minimumFractionDigits:1,maximumFractionDigits:1});
+  const fv=n=>(n/sk).toLocaleString('en-IN',{minimumFractionDigits:1,maximumFractionDigits:1});
   const fp=n=>(n>=0?'+':'')+n.toFixed(1)+'%';
-  const W=210, margin=14;
+  const W=210, LM=12, RW=W-LM*2;
 
-  // ── Header ───────────────────────────────────────────────────
-  doc.setFillColor(15,31,61);
-  doc.rect(0,0,W,24,'F');
-  doc.setTextColor(201,168,76);
-  doc.setFontSize(13); doc.setFont('helvetica','bold');
-  doc.text(company,margin,11);
-  doc.setTextColor(255,255,255);
-  doc.setFontSize(9); doc.setFont('helvetica','normal');
-  doc.text('Financial Summary Report — '+period,margin,18);
-  doc.setTextColor(201,168,76);
-  doc.text('Confidential',W-margin,18,'right');
+  // ── Colours ──────────────────────────────────────────────────
+  const NAVY=[15,31,61], GOLD=[201,168,76], WHITE=[255,255,255];
+  const LGRAY=[241,245,251], MGREEN=[26,122,74], MRED=[192,57,43];
+  const DGRAY=[74,85,104], SLATEGRAY=[113,128,150];
 
-  let y=30;
+  // ── Header band ──────────────────────────────────────────────
+  doc.setFillColor(...NAVY);
+  doc.rect(0,0,W,20,'F');
+  doc.setFillColor(...GOLD);
+  doc.rect(0,20,W,1,'F');
+  doc.setTextColor(...GOLD);
+  doc.setFont('helvetica','bold'); doc.setFontSize(12);
+  doc.text(company,LM,9);
+  doc.setFont('helvetica','normal'); doc.setFontSize(8);
+  doc.setTextColor(...WHITE);
+  doc.text('Financial Summary  |  '+period,LM,15);
+  doc.text('Confidential',W-LM,15,'right');
 
-  // ── P&L SUMMARY ──────────────────────────────────────────────
-  // Section header
-  doc.setFillColor(201,168,76);
-  doc.rect(margin,y,W-margin*2,7,'F');
-  doc.setTextColor(15,31,61);
-  doc.setFontSize(9); doc.setFont('helvetica','bold');
-  doc.text('PROFIT & LOSS SUMMARY',margin+3,y+5);
-  y+=10;
+  let y=26;
 
-  // Build P&L data
-  const revN=getNodes('pnl-revenue'), dirN=getNodes('pnl-direct');
-  const ohN=getNodes('pnl-overhead'), depN=getNodes('pnl-depn');
-  const finN=getNodes('pnl-finance'), taxN=getNodes('pnl-tax');
-  const sm=(nodes,f)=>sumNode(nodes,f);
-  const revA=sm(revN,'ma'),revB=sm(revN,'mb'),revYA=sm(revN,'ya'),revYB=sm(revN,'yb');
-  const dirA=sm(dirN,'ma'),dirB=sm(dirN,'mb'),dirYA=sm(dirN,'ya'),dirYB=sm(dirN,'yb');
-  const ohA=sm(ohN,'ma'),ohB=sm(ohN,'mb'),ohYA=sm(ohN,'ya'),ohYB=sm(ohN,'yb');
-  const depA=sm(depN,'ma'),depB=sm(depN,'mb'),depYA=sm(depN,'ya'),depYB=sm(depN,'yb');
-  const finA=sm(finN,'ma'),finB=sm(finN,'mb'),finYA=sm(finN,'ya'),finYB=sm(finN,'yb');
-  const taxA=sm(taxN,'ma'),taxB=sm(taxN,'mb'),taxYA=sm(taxN,'ya'),taxYB=sm(taxN,'yb');
-  const gpA=revA-dirA,gpB=revB-dirB,gpYA=revYA-dirYA,gpYB=revYB-dirYB;
-  const ebitdaA=gpA-ohA,ebitdaB=gpB-ohB,ebitdaYA=gpYA-ohYA,ebitdaYB=gpYB-ohYB;
-  const ebitA=ebitdaA-depA,ebitB=ebitdaB-depB,ebitYA=ebitdaYA-depYA,ebitYB=ebitdaYB-depYB;
-  const pbtA=ebitA-finA,pbtB=ebitB-finB,pbtYA=ebitYA-finYA,pbtYB=ebitYB-finYB;
-  const patA=pbtA-taxA,patB=pbtB-taxB,patYA=pbtYA-taxYA,patYB=pbtYB-taxYB;
-  const taxRateA=pbtA?taxA/pbtA*100:0;
-
-  const pnlHead=[['Line Item','MTD Actual','MTD Budget','MTD Var','MTD Var%','YTD Actual','YTD Budget','YTD Var','YTD Var%']];
-  const mkRow=(label,ma,mb,ya,yb,bold,indent)=>{
-    const mv=ma-mb,yv=ya-yb,mp=mb?mv/mb*100:0,yp=yb?yv/yb*100:0;
-    const lbl=(indent?'    ':'')+label;
-    const style=bold?{fontStyle:'bold',fillColor:[241,245,251]}:{};
-    const mvStyle={...style,textColor:mv>=0?[26,122,74]:[192,57,43]};
-    const yvStyle={...style,textColor:yv>=0?[26,122,74]:[192,57,43]};
-    return [{content:lbl,styles:style},
-      {content:fv(ma),styles:style},{content:fv(mb),styles:style},
-      {content:fv(mv),styles:mvStyle},{content:fp(mp),styles:mvStyle},
-      {content:fv(ya),styles:style},{content:fv(yb),styles:style},
-      {content:fv(yv),styles:yvStyle},{content:fp(yp),styles:yvStyle}];
+  // ── Helper: section header ────────────────────────────────────
+  const sectionHeader=(title)=>{
+    doc.setFillColor(...NAVY);
+    doc.roundedRect(LM,y,RW,6,1,1,'F');
+    doc.setTextColor(...GOLD); doc.setFont('helvetica','bold'); doc.setFontSize(8);
+    doc.text(title,LM+3,y+4.2);
+    y+=9;
   };
-  const mkPct=(label,val,base)=>[{content:'    '+label,styles:{textColor:[113,128,150],fontSize:7}},
-    {content:base?(val/base*100).toFixed(1)+'%':'—',styles:{textColor:[113,128,150],fontSize:7}},
-    '','','','','','',''];
 
-  const pnlBody=[
-    mkRow('Revenue',revA,revB,revYA,revYB,true,false),
-    mkRow('Less: Direct Costs',dirA,dirB,dirYA,dirYB,false,true),
-    mkRow('Gross Profit',gpA,gpB,gpYA,gpYB,true,false),
-    mkPct('GP Margin',gpA,revA),
-    mkRow('Less: Overheads',ohA,ohB,ohYA,ohYB,false,true),
-    mkRow('EBITDA',ebitdaA,ebitdaB,ebitdaYA,ebitdaYB,true,false),
-    mkPct('EBITDA Margin',ebitdaA,revA),
-    mkRow('Less: Depreciation & Amort.',depA,depB,depYA,depYB,false,true),
-    mkRow('EBIT',ebitA,ebitB,ebitYA,ebitYB,true,false),
-    mkPct('EBIT Margin',ebitA,revA),
-    mkRow('Less: Finance Costs',finA,finB,finYA,finYB,false,true),
-    mkRow('PBT (Profit Before Tax)',pbtA,pbtB,pbtYA,pbtYB,true,false),
-    mkPct('PBT Margin',pbtA,revA),
-    [{content:'    Effective Tax Rate',styles:{textColor:[113,128,150],fontSize:7}},
-     {content:taxRateA.toFixed(1)+'%',styles:{textColor:[113,128,150],fontSize:7}},'','','','','','',''],
-    mkRow('Less: Tax',taxA,taxB,taxYA,taxYB,false,true),
-    mkRow('PAT (Net Profit)',patA,patB,patYA,patYB,true,false),
-    mkPct('PAT Margin',patA,revA),
-  ];
+  // ── Helper: P&L table row ────────────────────────────────────
+  const COL=[44,18,18,18,13,18,18,18,13]; // col widths
+  const COLS=[LM];
+  COL.forEach((w,i)=>{if(i>0)COLS.push(COLS[i-1]+COL[i-1]);});
+  const ROW_H=5.5;
 
-  doc.autoTable({
-    head:pnlHead, body:pnlBody, startY:y,
-    styles:{fontSize:7.5,cellPadding:2,font:'helvetica'},
-    headStyles:{fillColor:[15,31,61],textColor:[201,168,76],fontStyle:'bold',fontSize:7.5},
-    alternateRowStyles:{fillColor:[252,252,252]},
-    columnStyles:{0:{cellWidth:44},1:{cellWidth:20},2:{cellWidth:20},3:{cellWidth:20},4:{cellWidth:14},5:{cellWidth:20},6:{cellWidth:20},7:{cellWidth:20},8:{cellWidth:14}},
-    margin:{left:margin,right:margin},
-    tableLineColor:[226,232,240],tableLineWidth:0.1
-  });
+  const drawPnLHeader=()=>{
+    doc.setFillColor(...LGRAY);
+    doc.rect(LM,y,RW,ROW_H,'F');
+    doc.setTextColor(...DGRAY); doc.setFont('helvetica','bold'); doc.setFontSize(6.5);
+    const heads=['','MTD Act','MTD Bud','MTD Var','Var%','YTD Act','YTD Bud','YTD Var','Var%'];
+    heads.forEach((h,i)=>doc.text(h,COLS[i]+(i===0?1:COL[i]-1),y+3.8,{align:i===0?'left':'right'}));
+    doc.setDrawColor(...LGRAY); doc.line(LM,y+ROW_H,LM+RW,y+ROW_H);
+    y+=ROW_H;
+  };
 
-  y=doc.lastAutoTable.finalY+12;
+  const drawPnLRow=(label,ma,mb,ya,yb,bold,indent,separator)=>{
+    if(bold){doc.setFillColor(241,245,251);doc.rect(LM,y,RW,ROW_H,'F');}
+    doc.setFont('helvetica',bold?'bold':'normal'); doc.setFontSize(7);
+    const mv=ma-mb, yv=ya-yb, mp=mb?mv/mb*100:0, yp=yb?yv/yb*100:0;
+    const lbl=(indent?'    ':'')+label;
+    doc.setTextColor(...(bold?NAVY:DGRAY));
+    doc.text(lbl,COLS[0]+1,y+3.8);
+    const vals=[fv(ma),fv(mb),fv(mv),fp(mp),fv(ya),fv(yb),fv(yv),fp(yp)];
+    vals.forEach((v,i)=>{
+      const col=i+1;
+      const isVar=(col===3||col===7), isPct=(col===4||col===8);
+      const val=isVar||isPct?(col<=4?mv:yv):0;
+      if(isVar||isPct) doc.setTextColor(...(val>=0?MGREEN:MRED));
+      else doc.setTextColor(...(bold?NAVY:DGRAY));
+      doc.text(v,COLS[col]+COL[col]-1,y+3.8,{align:'right'});
+    });
+    if(separator){doc.setDrawColor(...NAVY);doc.setLineWidth(0.3);doc.line(LM,y+ROW_H,LM+RW,y+ROW_H);doc.setLineWidth(0.1);}
+    else{doc.setDrawColor(220,220,220);doc.line(LM,y+ROW_H,LM+RW,y+ROW_H);}
+    y+=ROW_H;
+  };
 
-  // ── BALANCE SHEET SUMMARY ────────────────────────────────────
-  // Check if new page needed
+  const drawPctRow=(label,val,base)=>{
+    const p=base?val/base*100:0;
+    doc.setFont('helvetica','italic'); doc.setFontSize(6.5);
+    doc.setTextColor(...SLATEGRAY);
+    doc.text('    '+label,COLS[0]+1,y+3.5);
+    doc.text(p.toFixed(1)+'%',COLS[1]+COL[1]-1,y+3.5,{align:'right'});
+    y+=4.5;
+  };
+
+  // ── P&L DATA ─────────────────────────────────────────────────
+  const p=computePnL();
+  const {revA,revB,revYA,revYB,dirA,dirB,dirYA,dirYB,
+         ohA,ohB,ohYA,ohYB,depA,depB,depYA,depYB,
+         finA,finB,finYA,finYB,taxA,taxB,taxYA,taxYB,
+         gpA,gpB,gpYA,gpYB,ebitdaA,ebitdaB,ebitdaYA,ebitdaYB,
+         ebitA,ebitB,ebitYA,ebitYB,pbtA,pbtB,pbtYA,pbtYB,patA,patB,patYA,patYB}=p;
+
+  sectionHeader('PROFIT & LOSS SUMMARY  ('+sc+' in '+(sk>=10000000?'Cr':sk>=100000?'Lakhs':sk>=1000?'Thousands':'Actuals')+')');
+  drawPnLHeader();
+  drawPnLRow('Revenue',revA,revB,revYA,revYB,true,false,false);
+  drawPnLRow('  Direct Costs',dirA,dirB,dirYA,dirYB,false,false,false);
+  drawPnLRow('Gross Profit',gpA,gpB,gpYA,gpYB,true,false,true);
+  drawPctRow('GP Margin',gpA,revA);
+  drawPnLRow('  Overheads',ohA,ohB,ohYA,ohYB,false,false,false);
+  drawPnLRow('EBITDA',ebitdaA,ebitdaB,ebitdaYA,ebitdaYB,true,false,true);
+  drawPctRow('EBITDA Margin',ebitdaA,revA);
+  drawPnLRow('  Depreciation & Amort.',depA,depB,depYA,depYB,false,false,false);
+  drawPnLRow('EBIT',ebitA,ebitB,ebitYA,ebitYB,true,false,true);
+  drawPctRow('EBIT Margin',ebitA,revA);
+  drawPnLRow('  Finance Costs',finA,finB,finYA,finYB,false,false,false);
+  drawPnLRow('PBT',pbtA,pbtB,pbtYA,pbtYB,true,false,true);
+  drawPctRow('PBT Margin / Eff. Tax Rate',pbtA,revA);
+  drawPnLRow('  Tax',taxA,taxB,taxYA,taxYB,false,false,false);
+  drawPnLRow('PAT (Net Profit)',patA,patB,patYA,patYB,true,false,true);
+  drawPctRow('PAT Margin',patA,revA);
+
+  y+=6;
   if(y>230){doc.addPage();y=20;}
 
-  doc.setFillColor(15,31,61);
-  doc.rect(margin,y,W-margin*2,7,'F');
-  doc.setTextColor(201,168,76);
-  doc.setFontSize(9); doc.setFont('helvetica','bold');
-  doc.text('BALANCE SHEET SUMMARY',margin+3,y+5);
-  y+=10;
+  // ── BALANCE SHEET ─────────────────────────────────────────────
+  const {ncaN,caN,clN,nclN,eqN,ncaA,caA,clA,nclA,eqA}=computeBS();
+  const totalAssets=ncaA+caA;
+  const totalLiabEq=Math.abs(nclA)+Math.abs(clA)+Math.abs(eqA);
+  const HW=(RW-4)/2; // half width with gap
 
-  const ncaN=getNodes('bs-nca'),caN=getNodes('bs-ca');
-  const clN=getNodes('bs-cl'),nclN=getNodes('bs-ncl'),eqN=getNodes('bs-eq');
-  const ncaA=sumNode(ncaN),caA=sumNode(caN),clA=sumNode(clN),nclA=sumNode(nclN),eqA=sumNode(eqN);
-  const totalAssets=ncaA+caA, totalLiabEq=nclA+clA+eqA;
+  sectionHeader('BALANCE SHEET SUMMARY  (as at '+period+')');
 
-  const bsHead=[['',`As at ${period}`,'','']];
-  const bsBody=[
-    [{content:'ASSETS',styles:{fontStyle:'bold',fillColor:[241,245,251]}},'','',''],
-    ['Non-current Assets',fv(ncaA),'',''],
-    ...getNodes('bs-nca').map(n=>{const v=sumNode([n]);return v!==0?[{content:'    '+n.charAt(0).toUpperCase()+n.slice(1),styles:{fontSize:7,textColor:[74,85,104]}},fv(v),'','']:null;}).filter(Boolean),
-    ['Current Assets',fv(caA),'',''],
-    ...getNodes('bs-ca').map(n=>{const v=sumNode([n]);return v!==0?[{content:'    '+n.charAt(0).toUpperCase()+n.slice(1),styles:{fontSize:7,textColor:[74,85,104]}},fv(v),'','']:null;}).filter(Boolean),
-    [{content:'Total Assets',styles:{fontStyle:'bold',fillColor:[15,31,61],textColor:[255,255,255]}},{content:fv(totalAssets),styles:{fontStyle:'bold',fillColor:[15,31,61],textColor:[255,255,255]}},'',''],
-    ['','','',''],
-    [{content:'LIABILITIES & EQUITY',styles:{fontStyle:'bold',fillColor:[241,245,251]}},'','',''],
-    ['Non-current Liabilities','',fv(nclA),''],
-    ...getNodes('bs-ncl').map(n=>{const v=sumNode([n]);return v!==0?[{content:'    '+n.charAt(0).toUpperCase()+n.slice(1),styles:{fontSize:7,textColor:[74,85,104]}},'',fv(v),'']:null;}).filter(Boolean),
-    ['Current Liabilities','',fv(clA),''],
-    ...getNodes('bs-cl').map(n=>{const v=sumNode([n]);return v!==0?[{content:'    '+n.charAt(0).toUpperCase()+n.slice(1),styles:{fontSize:7,textColor:[74,85,104]}},'',fv(v),'']:null;}).filter(Boolean),
-    ['Equity & Reserves','',fv(eqA),''],
-    ...getNodes('bs-eq').map(n=>{const v=sumNode([n]);return v!==0?[{content:'    '+n.charAt(0).toUpperCase()+n.slice(1),styles:{fontSize:7,textColor:[74,85,104]}},'',fv(v),'']:null;}).filter(Boolean),
-    [{content:'Total Liabilities & Equity',styles:{fontStyle:'bold',fillColor:[201,168,76],textColor:[15,31,61]}},{content:'',styles:{fillColor:[201,168,76]}},{content:fv(totalLiabEq),styles:{fontStyle:'bold',fillColor:[201,168,76],textColor:[15,31,61]}},''],
-    ['','','',''],
-    [{content:Math.abs(totalAssets-totalLiabEq)<1?'✓ Balance Sheet balances':'⚠ Out of balance by '+fv(Math.abs(totalAssets-totalLiabEq)),styles:{textColor:Math.abs(totalAssets-totalLiabEq)<1?[26,122,74]:[192,57,43],fontSize:7,fontStyle:'bold'}},'','',''],
+  // Two column layout
+  const bsY=y;
+  const drawBSCol=(title,items,startX,colW,isTotPositive)=>{
+    let by=bsY;
+    doc.setFillColor(...LGRAY);
+    doc.rect(startX,by,colW,5.5,'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(7);
+    doc.setTextColor(...NAVY);
+    doc.text(title,startX+2,by+3.8);
+    doc.text('Actual',startX+colW-2,by+3.8,{align:'right'});
+    by+=5.5;
+    items.forEach(({label,val,bold,indent,total})=>{
+      if(total){
+        doc.setFillColor(...NAVY);
+        doc.rect(startX,by,colW,5.5,'F');
+        doc.setFont('helvetica','bold'); doc.setFontSize(7);
+        doc.setTextColor(...WHITE);
+        doc.text(label,startX+2,by+3.8);
+        doc.text(fv(Math.abs(val)),startX+colW-2,by+3.8,{align:'right'});
+      } else {
+        if(bold){doc.setFillColor(248,250,253);doc.rect(startX,by,colW,5,'F');}
+        doc.setFont('helvetica',bold?'bold':'normal'); doc.setFontSize(6.5);
+        doc.setTextColor(...(bold?NAVY:DGRAY));
+        doc.text((indent?'  ':'')+label,startX+2,by+3.5);
+        doc.text(fv(Math.abs(val)),startX+colW-2,by+3.5,{align:'right'});
+        doc.setDrawColor(230,230,230);
+        doc.line(startX,by+5,startX+colW,by+5);
+      }
+      by+=total?5.5:5;
+    });
+    return by;
+  };
+
+  const assetsItems=[
+    {label:'Non-current Assets',val:ncaA,bold:true,indent:false},
+    ...ncaN.map(n=>({label:n.charAt(0).toUpperCase()+n.slice(1),val:sumNode([n]),bold:false,indent:true})).filter(x=>x.val!==0),
+    {label:'Current Assets',val:caA,bold:true,indent:false},
+    ...caN.map(n=>({label:n.charAt(0).toUpperCase()+n.slice(1),val:sumNode([n]),bold:false,indent:true})).filter(x=>x.val!==0),
+    {label:'Total Assets',val:totalAssets,total:true},
+  ];
+  const liabItems=[
+    {label:'Non-current Liabilities',val:nclA,bold:true,indent:false},
+    ...nclN.map(n=>({label:n.charAt(0).toUpperCase()+n.slice(1),val:sumNode([n]),bold:false,indent:true})).filter(x=>x.val!==0),
+    {label:'Current Liabilities',val:clA,bold:true,indent:false},
+    ...clN.map(n=>({label:n.charAt(0).toUpperCase()+n.slice(1),val:sumNode([n]),bold:false,indent:true})).filter(x=>x.val!==0),
+    {label:'Equity & Reserves',val:eqA,bold:true,indent:false},
+    ...eqN.map(n=>({label:n.charAt(0).toUpperCase()+n.slice(1),val:sumNode([n]),bold:false,indent:true})).filter(x=>x.val!==0),
+    {label:'Total Liabilities & Equity',val:totalLiabEq,total:true},
   ];
 
-  doc.autoTable({
-    head:bsHead, body:bsBody, startY:y,
-    styles:{fontSize:7.5,cellPadding:2,font:'helvetica'},
-    headStyles:{fillColor:[241,245,251],textColor:[15,31,61],fontStyle:'bold',fontSize:7.5},
-    columnStyles:{0:{cellWidth:70},1:{cellWidth:40},2:{cellWidth:40},3:{cellWidth:22}},
-    margin:{left:margin,right:margin},
-    tableLineColor:[226,232,240],tableLineWidth:0.1
-  });
+  const endA=drawBSCol('ASSETS',assetsItems,LM,HW);
+  const endL=drawBSCol('LIABILITIES & EQUITY',liabItems,LM+HW+4,HW);
+  y=Math.max(endA,endL)+4;
 
-  // ── Footer on all pages ──────────────────────────────────────
-  const pageCount=doc.internal.getNumberOfPages();
-  for(let i=1;i<=pageCount;i++){
-    doc.setPage(i);
-    doc.setFillColor(15,31,61);
-    doc.rect(0,287,W,10,'F');
-    doc.setTextColor(113,128,150); doc.setFontSize(7);
-    doc.text(`${company} — Confidential — ${period}`,margin,293);
-    doc.text(`Page ${i} of ${pageCount}`,W-margin,293,'right');
+  // Balance check line
+  const diff=Math.abs(totalAssets-totalLiabEq);
+  doc.setFont('helvetica','bold'); doc.setFontSize(7);
+  if(diff<1){
+    doc.setTextColor(...MGREEN);
+    doc.text('✓ Balance Sheet balances  ('+sc+fv(totalAssets)+')',LM,y);
+  } else {
+    doc.setTextColor(...MRED);
+    doc.text('⚠ Out of balance by '+sc+fv(diff)+' — check Settings → BS node mapping',LM,y);
   }
-  doc.save(`Financial_Summary_${period}.pdf`);
+
+  // ── Footer ────────────────────────────────────────────────────
+  const pages=doc.internal.getNumberOfPages();
+  for(let i=1;i<=pages;i++){
+    doc.setPage(i);
+    doc.setFillColor(...NAVY);
+    doc.rect(0,287,W,10,'F');
+    doc.setTextColor(...SLATEGRAY); doc.setFont('helvetica','normal'); doc.setFontSize(6.5);
+    doc.text(company+' — Confidential — '+period,LM,293);
+    doc.text('Page '+i+' of '+pages,W-LM,293,'right');
+  }
+
+  doc.save('Financial_Summary_'+period+'.pdf');
 }
 
 // ─── FEEDBACK ─────────────────────────────────────────────────────
