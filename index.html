@@ -1376,7 +1376,8 @@ function renderRatios() {
   if(!appData.length) return;
   const {revA,gpA,ebitdaA,ebitA,pbtA,patA,taxA,finA}=computePnL();
   const {ncaA,caA,clA,nclA,eqA}=computeBS();
-  const debt=nclA+Math.abs(clA);
+  const adjEqA=Math.abs(eqA)+Math.abs(patA); // equity + current PAT
+  const debt=Math.abs(nclA)+Math.abs(clA);
   const tog=id=>document.getElementById(id)?.classList.contains('on');
   const ratios=[];
   if(tog('tog-gp'))   ratios.push({l:'GP Margin',v:revA?(gpA/revA*100).toFixed(1)+'%':'N/A'});
@@ -1388,7 +1389,7 @@ function renderRatios() {
   if(tog('tog-cr'))   ratios.push({l:'Current Ratio',v:clA?(caA/Math.abs(clA)).toFixed(2)+'x':'N/A'});
   if(tog('tog-qr'))   ratios.push({l:'Quick Ratio',v:clA?((caA*0.7)/Math.abs(clA)).toFixed(2)+'x':'N/A'});
   if(tog('tog-wc'))   ratios.push({l:'Working Capital',v:fmt(caA-Math.abs(clA))});
-  if(tog('tog-de'))   ratios.push({l:'Debt / Equity',v:eqA?(debt/Math.abs(eqA)).toFixed(2)+'x':'N/A'});
+  if(tog('tog-de'))   ratios.push({l:'Debt / Equity',v:adjEqA?(debt/adjEqA).toFixed(2)+'x':'N/A'});
   if(tog('tog-ic'))   ratios.push({l:'Interest Coverage',v:finA?(ebitA/finA).toFixed(2)+'x':'N/A'});
   if(tog('tog-debitda'))ratios.push({l:'Debt / EBITDA',v:ebitdaA?(debt/ebitdaA).toFixed(2)+'x':'N/A'});
   if(!ratios.length){document.getElementById('ratios-section').style.display='none';return;}
@@ -1403,38 +1404,83 @@ function renderBS() {
   const period=document.getElementById('s-period')?.value||'—';
   document.getElementById('bs-period-lbl').textContent=period;
   const {ncaN,caN,clN,nclN,eqN,ncaA,caA,clA,nclA,eqA}=computeBS();
+
+  // Auto-bridge: compute current period PAT from P&L section
+  // and add it under Equity so BS always balances
+  const pnl=computePnL();
+  const patA=pnl.patA; // current period net profit (MTD)
+
   const totalAssets=ncaA+caA;
-  const totalLiabEq=Math.abs(nclA)+Math.abs(clA)+Math.abs(eqA);
-  const bsRow=(label,val,bold,indent)=>{
+  // Equity already in TB + current period PAT (PAT is positive = profit = increases equity)
+  const totalLiabEq=Math.abs(nclA)+Math.abs(clA)+Math.abs(eqA)+Math.abs(patA);
+
+  const bsRow=(label,val,bold,indent,color)=>{
     const st=bold?'font-weight:600;background:#f1f5fb;':'';
     const pl=indent?'padding-left:20px;font-size:12px;':'';
-    return `<tr style="${st}"><td style="${pl}">${label}</td><td style="text-align:right;">${fmt(Math.abs(val))}</td></tr>`;
+    const cl=color?`color:${color};`:'';
+    return `<tr style="${st}${cl}"><td style="${pl}">${label}</td>
+      <td style="text-align:right;${cl}">${fmt(Math.abs(val))}</td></tr>`;
   };
-  let assetRows=`<thead><tr><th>Assets</th><th style="text-align:right;">Actual</th></tr></thead><tbody>`;
+
+  // Assets side
+  let assetRows=`<thead><tr>
+    <th>Assets</th>
+    <th style="text-align:right;">MTD Actual</th>
+  </tr></thead><tbody>`;
   assetRows+=bsRow('Non-current Assets',ncaA,true,false);
   ncaN.forEach(n=>{const v=sumNode([n]);if(v!==0)assetRows+=bsRow(n.charAt(0).toUpperCase()+n.slice(1),v,false,true);});
   assetRows+=bsRow('Current Assets',caA,true,false);
   caN.forEach(n=>{const v=sumNode([n]);if(v!==0)assetRows+=bsRow(n.charAt(0).toUpperCase()+n.slice(1),v,false,true);});
-  assetRows+=`<tr style="font-weight:600;background:var(--navy);color:white;"><td>Total Assets</td><td style="text-align:right;">${fmt(totalAssets)}</td></tr></tbody>`;
-  let liabRows=`<thead><tr><th>Liabilities & Equity</th><th style="text-align:right;">Actual</th></tr></thead><tbody>`;
+  assetRows+=`<tr style="font-weight:600;background:var(--navy);color:white;">
+    <td>Total Assets</td>
+    <td style="text-align:right;">${fmt(totalAssets)}</td>
+  </tr></tbody>`;
+
+  // Liabilities & Equity side
+  let liabRows=`<thead><tr>
+    <th>Liabilities & Equity</th>
+    <th style="text-align:right;">MTD Actual</th>
+  </tr></thead><tbody>`;
   liabRows+=bsRow('Non-current Liabilities',nclA,true,false);
   nclN.forEach(n=>{const v=sumNode([n]);if(v!==0)liabRows+=bsRow(n.charAt(0).toUpperCase()+n.slice(1),v,false,true);});
   liabRows+=bsRow('Current Liabilities',clA,true,false);
   clN.forEach(n=>{const v=sumNode([n]);if(v!==0)liabRows+=bsRow(n.charAt(0).toUpperCase()+n.slice(1),v,false,true);});
   liabRows+=bsRow('Equity & Reserves',eqA,true,false);
   eqN.forEach(n=>{const v=sumNode([n]);if(v!==0)liabRows+=bsRow(n.charAt(0).toUpperCase()+n.slice(1),v,false,true);});
-  liabRows+=`<tr style="font-weight:600;background:var(--gold);color:var(--navy);"><td>Total Liabilities & Equity</td><td style="text-align:right;">${fmt(totalLiabEq)}</td></tr></tbody>`;
+
+  // Auto-calculated PAT bridge line
+  const patColor=patA>=0?'var(--green)':'var(--red)';
+  const patLabel=patA>=0?'Current Period Profit (auto)':'Current Period Loss (auto)';
+  liabRows+=`<tr style="background:#fafcff;">
+    <td style="padding-left:20px;font-size:12px;color:${patColor};font-style:italic;">
+      ↳ ${patLabel}
+    </td>
+    <td style="text-align:right;font-size:12px;color:${patColor};font-style:italic;">
+      ${fmt(Math.abs(patA))}
+    </td>
+  </tr>`;
+
+  liabRows+=`<tr style="font-weight:600;background:var(--gold);color:var(--navy);">
+    <td>Total Liabilities & Equity</td>
+    <td style="text-align:right;">${fmt(totalLiabEq)}</td>
+  </tr></tbody>`;
+
   document.getElementById('bs-assets-wrap').innerHTML=`<table>${assetRows}</table>`;
   document.getElementById('bs-liab-wrap').innerHTML=`<table>${liabRows}</table>`;
+
+  // Balance check
   const diff=Math.abs(totalAssets-totalLiabEq);
   const chk=document.getElementById('bs-check');
   chk.style.display='block';
   if(diff<1){
     chk.style.cssText='display:block;background:#f0faf5;border:1px solid #1a7a4a;color:#1a7a4a;border-radius:6px;padding:10px 14px;font-size:13px;font-weight:500;margin-top:14px;';
-    chk.textContent='✓ Balance Sheet balances — Total Assets = Total Liabilities & Equity ('+fmt(totalAssets)+')';
+    chk.innerHTML='✓ Balance Sheet balances — Total Assets = Total Liabilities & Equity ('
+      +fmt(totalAssets)+')<br><span style="font-size:11px;font-weight:400;opacity:0.8;">'
+      +'Current Period P&L bridged automatically: PAT '+fmt(patA)+'</span>';
   } else {
     chk.style.cssText='display:block;background:#fdf2f2;border:1px solid #c0392b;color:#c0392b;border-radius:6px;padding:10px 14px;font-size:13px;font-weight:500;margin-top:14px;';
-    chk.textContent='⚠ Out of balance by '+fmt(diff)+' — verify BS node mapping in Settings';
+    chk.textContent='⚠ Out of balance by '+fmt(diff)
+      +' — check that all BS nodes are mapped correctly in Settings';
   }
 }
 
@@ -1542,7 +1588,9 @@ function exportExcel(mode='detail') {
   bsRows.push(['','','Equity & Reserves',fv(Math.abs(eqA))]);
   eqN.forEach(n=>{const v=sumNode([n]);if(v!==0)bsRows.push(['','','  '+n.charAt(0).toUpperCase()+n.slice(1),fv(Math.abs(v))]);});
   bsRows.push([]);
-  const tA=ncaA+caA, tL=Math.abs(nclA)+Math.abs(clA)+Math.abs(eqA);
+  const {patA:xlPatA}=computePnL();
+  const xlPatLabel=xlPatA>=0?'  Current Period Profit (auto)':'  Current Period Loss (auto)';
+  const tA=ncaA+caA, tL=Math.abs(nclA)+Math.abs(clA)+Math.abs(eqA)+Math.abs(xlPatA);
   bsRows.push(['TOTAL ASSETS',fv(tA),'TOTAL LIABILITIES & EQUITY',fv(tL)]);
   bsRows.push([Math.abs(tA-tL)<1?'✓ Balanced':'⚠ Diff: '+fv(Math.abs(tA-tL)),'','','']);
   const wsBS=XLSX.utils.aoa_to_sheet(bsRows);
@@ -1745,6 +1793,9 @@ function exportPDF() {
     ...caN.map(n=>({label:n.charAt(0).toUpperCase()+n.slice(1),val:sumNode([n]),bold:false,indent:true})).filter(x=>x.val!==0),
     {label:'Total Assets',val:totalAssets,total:true},
   ];
+  // Auto PAT bridge
+  const {patA:pdfPatA}=computePnL();
+  const pdfPatLabel=pdfPatA>=0?'Current Period Profit (auto)':'Current Period Loss (auto)';
   const liabItems=[
     {label:'Non-current Liabilities',val:nclA,bold:true,indent:false},
     ...nclN.map(n=>({label:n.charAt(0).toUpperCase()+n.slice(1),val:sumNode([n]),bold:false,indent:true})).filter(x=>x.val!==0),
@@ -1752,6 +1803,7 @@ function exportPDF() {
     ...clN.map(n=>({label:n.charAt(0).toUpperCase()+n.slice(1),val:sumNode([n]),bold:false,indent:true})).filter(x=>x.val!==0),
     {label:'Equity & Reserves',val:eqA,bold:true,indent:false},
     ...eqN.map(n=>({label:n.charAt(0).toUpperCase()+n.slice(1),val:sumNode([n]),bold:false,indent:true})).filter(x=>x.val!==0),
+    {label:'  '+pdfPatLabel,val:pdfPatA,bold:false,indent:true},
     {label:'Total Liabilities & Equity',val:totalLiabEq,total:true},
   ];
 
