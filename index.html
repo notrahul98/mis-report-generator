@@ -403,7 +403,7 @@ footer span { color: var(--gold); }
 
     <div class="tool-shell">
       <div class="tool-topbar">
-        <div class="tool-topbar-title">MIS Report Generator <span>·</span> <span style="font-size:13px;font-family:'DM Sans',sans-serif;color:rgba(255,255,255,0.5);" id="t-period">Feb 2025</span></div>
+        <div class="tool-topbar-title">MIS Report Generator <span>·</span> <span style="font-size:13px;font-family:'DM Sans',sans-serif;color:rgba(255,255,255,0.5);" id="t-period">Feb-2025</span></div>
         <div style="display:flex;gap:8px;">
           <button class="tbtn" onclick="downloadTemplate()">↓ Template</button><button class="tbtn" onclick="exportExcel('summary')">Excel Summary</button><button class="tbtn" onclick="exportExcel('detail')">Excel Detail</button><button class="tbtn" onclick="exportPDF()">Export PDF</button>
           <button class="tbtn-gold tbtn" onclick="generateReport()">Generate Report</button>
@@ -574,7 +574,7 @@ footer span { color: var(--gold); }
             <div class="setting-card-title">Report settings</div>
             <div class="field-row"><label>Currency</label><select id="s-cur"><option value="₹">INR (₹)</option><option value="$">USD ($)</option><option value="£">GBP (£)</option></select></div>
             <div class="field-row"><label>Scale</label><select id="s-scale"><option value="1">Actuals</option><option value="1000" selected>Thousands</option><option value="100000">Lakhs</option><option value="10000000">Crores</option></select></div>
-            <div class="field-row"><label>Period</label><input type="month" id="s-period" value="2025-02" onchange="document.getElementById('t-period').textContent=this.value"></div>
+            <div class="field-row"><label>Period</label><input type="month" id="s-period" value="2025-02" onchange="document.getElementById('t-period').textContent=fmtPeriod()"></div>
             <div class="field-row"><label>Company</label><input type="text" id="s-company" value="Acme Corp Ltd"></div>
           </div>
         </div>
@@ -754,6 +754,15 @@ let chartInstances = {};
 // ─── HELPERS ─────────────────────────────────────────────────────
 function cur() { return document.getElementById('s-cur')?.value || '₹'; }
 function scale() { return parseInt(document.getElementById('s-scale')?.value || '1000'); }
+function fmtPeriod() {
+  const raw=document.getElementById('s-period')?.value||'';
+  if(!raw) return '—';
+  const parts=raw.split('-');
+  if(parts.length<2) return raw;
+  const MN=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const mo=parseInt(parts[1],10)-1;
+  return (MN[mo]||parts[1])+'-'+parts[0];
+}
 function fmt(n) {
   const s = scale(), c = cur();
   return c + (n/s).toLocaleString('en-IN', {minimumFractionDigits:1, maximumFractionDigits:1});
@@ -906,7 +915,10 @@ function handleUpload(e) {
     }
   };
   if(ext==='csv') reader.readAsText(f);
-  else reader.readAsArrayfunction renderPreview() {
+  else reader.readAsArrayBuffer(f);
+}
+
+function renderPreview() {
   document.getElementById('data-preview').style.display='block';
   document.getElementById('row-count').textContent=appData.length;
   document.getElementById('preview-body').innerHTML=appData.map(r=>{
@@ -920,12 +932,12 @@ function handleUpload(e) {
       <td class="${varCls(yv)}">${fmt(yv)}</td>
       <td style="font-size:11px;color:var(--slate-light);">${r.cn}</td></tr>`;
   }).join('');
-}).join('');
 }
 
 // ─── GENERATE REPORT ─────────────────────────────────────────────
 function generateReport() {
   if(!appData.length){loadSample();}
+  const _pd=document.getElementById('t-period'); if(_pd) _pd.textContent=fmtPeriod();
   updateMetrics();
   renderMIS();
   renderPnL();
@@ -1133,7 +1145,7 @@ function generateEmails() {
   const prefix=document.getElementById('s-subject')?.value||'[MIS] Variance Commentary Required';
   const sender=document.getElementById('s-sender')?.value||'Finance Team';
   const days=document.getElementById('s-days')?.value||2;
-  const period=document.getElementById('s-period')?.value||'Report';
+  const period=fmtPeriod()||'Report';
   const sc=cur(), sk=scale();
   const fv=n=>sc+(n/sk).toLocaleString('en-IN',{minimumFractionDigits:1,maximumFractionDigits:1});
   const fp=n=>(n>=0?'+':'')+n.toFixed(1)+'%';
@@ -1209,7 +1221,7 @@ function generateEmails() {
 
 function sendEmail(i,to,sub,items) {
   const name=document.querySelector(`#ec-${i} .email-to strong`)?.textContent||'';
-  const period=document.getElementById('s-period')?.value||'Report';
+  const period=fmtPeriod()||'Report';
   const sender=document.getElementById('s-sender')?.value||'Finance Team';
   const days=document.getElementById('s-days')?.value||2;
   const body=buildEmailBody(name,period,items,sender,days);
@@ -1421,8 +1433,8 @@ function renderRatios() {
 
 function renderBS() {
   if(!appData.length) return;
-  const period=document.getElementById('s-period')?.value||'—';
-  document.getElementById('bs-period-lbl').textContent=period;
+  const period=fmtPeriod()||'—';
+  document.getElementById('bs-period-lbl').textContent=fmtPeriod();
   const {ncaN,caN,clN,nclN,eqN,ncaA,caA,clA,nclA,eqA}=computeBS();
   const totalAssets=ncaA+caA;
   const totalLiabEqRaw=Math.abs(nclA)+Math.abs(clA)+Math.abs(eqA);
@@ -1668,7 +1680,7 @@ function downloadTemplate() {
 
 function exportExcel(mode='detail') {
   if(!appData.length){alert('Load data first.');return;}
-  const period=document.getElementById('s-period')?.value||'Report';
+  const period=fmtPeriod()||'Report';
   const company=document.getElementById('s-company')?.value||'Company';
   const sk=scale(), sc=cur();
   const fv=n=>+(n/sk).toFixed(1);
@@ -1773,7 +1785,7 @@ function exportPDF() {
   if(!appData.length){alert('Load data first.');return;}
   const {jsPDF}=window.jspdf;
   const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
-  const period=document.getElementById('s-period')?.value||'Report';
+  const period=fmtPeriod()||'Report';
   const company=document.getElementById('s-company')?.value||'Company';
   const sk=scale(), sc=cur();
   const fv=n=>(n/sk).toLocaleString('en-IN',{minimumFractionDigits:1,maximumFractionDigits:1});
@@ -1888,7 +1900,9 @@ function exportPDF() {
   // ── BALANCE SHEET ─────────────────────────────────────────────
   const {ncaN,caN,clN,nclN,eqN,ncaA,caA,clA,nclA,eqA}=computeBS();
   const totalAssets=ncaA+caA;
-  const totalLiabEq=Math.abs(nclA)+Math.abs(clA)+Math.abs(eqA);
+  const tlRaw=Math.abs(nclA)+Math.abs(clA)+Math.abs(eqA);
+  const pdfBr=totalAssets-tlRaw;
+  const totalLiabEq=tlRaw+Math.abs(pdfBr);
   const HW=(RW-4)/2; // half width with gap
 
   sectionHeader('BALANCE SHEET SUMMARY  (as at '+period+')');
