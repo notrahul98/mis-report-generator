@@ -415,6 +415,7 @@ footer span { color: var(--gold); }
         <div class="tool-tab" onclick="switchTab('report')">MIS Report</div>
         <div class="tool-tab" onclick="switchTab('emails')">Email Drafts</div>
         <div class="tool-tab" onclick="switchTab('bs')">Balance Sheet</div>
+        <div class="tool-tab" onclick="switchTab('check')">Data Check</div>
         <div class="tool-tab" onclick="switchTab('settings')">Settings</div>
       </div>
 
@@ -425,7 +426,7 @@ footer span { color: var(--gold); }
           <input type="file" id="tb-file" accept=".xlsx,.xls,.csv" onchange="handleUpload(event)">
           <div class="upload-icon-wrap"><svg viewBox="0 0 24 24"><path d="M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z"/></svg></div>
           <div class="upload-title">Click to upload Trial Balance</div>
-          <div class="upload-sub">Excel (.xlsx) or CSV — 8 columns: Account, Node, MTD Actual, MTD Budget, YTD Actual, YTD Budget, Contact Email, Contact Name</div>
+          <div class="upload-sub">Excel (.xlsx) or CSV — columns: Account, Node, Dr/Cr, MTD Actual, MTD Budget, YTD Actual, YTD Budget, Contact Email, Contact Name (Dr/Cr optional but recommended)</div>
         </div>
         <div class="action-row">
           <button class="tbtn tbtn-navy" onclick="loadSample()">Load sample data</button>
@@ -451,7 +452,7 @@ footer span { color: var(--gold); }
         <div id="data-preview" style="display:none;margin-top:20px;">
           <div class="lbl"><span id="row-count">0</span> line items loaded</div>
           <div class="data-wrap">
-            <table><thead><tr><th>Account</th><th>Node</th><th>MTD Actual</th><th>MTD Budget</th><th>MTD Var</th><th>MTD Var%</th><th>YTD Actual</th><th>YTD Budget</th><th>YTD Var</th><th>Contact</th></tr></thead>
+            <table><thead><tr><th>Account</th><th>Node</th><th>Dr/Cr</th><th>MTD Actual</th><th>MTD Budget</th><th>MTD Var</th><th>MTD Var%</th><th>YTD Actual</th><th>YTD Budget</th><th>YTD Var</th><th>Contact</th></tr></thead>
             <tbody id="preview-body"></tbody></table>
           </div>
         </div>
@@ -485,12 +486,12 @@ footer span { color: var(--gold); }
         </div>
         <div class="data-wrap" id="mis-wrap"><div style="padding:48px;text-align:center;color:var(--slate-light);font-size:14px;">Load data and click Generate Report</div></div>
         <!-- P&L Summary -->
-        <div id="pnl-section" style="display:none;margin-top:24px;">
+        <div id="pnl-section" style="margin-top:24px;">
           <div style="font-size:12px;font-weight:600;letter-spacing:0.07em;text-transform:uppercase;color:var(--slate-light);margin-bottom:10px;">P&L Summary</div>
           <div class="data-wrap" id="pnl-wrap"></div>
         </div>
         <!-- Financial Ratios -->
-        <div id="ratios-section" style="display:none;margin-top:24px;">
+        <div id="ratios-section" style="margin-top:24px;">
           <div style="font-size:12px;font-weight:600;letter-spacing:0.07em;text-transform:uppercase;color:var(--slate-light);margin-bottom:10px;">Financial Metrics</div>
           <div id="ratios-wrap" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;"></div>
         </div>
@@ -530,6 +531,19 @@ footer span { color: var(--gold); }
           </div>
         </div>
         <div id="bs-check" style="margin-top:14px;display:none;padding:12px 16px;border-radius:var(--radius);font-size:13px;font-weight:500;"></div>
+      </div>
+
+      <!-- CHECK SHEET -->
+      <div id="tp-check" class="tool-panel">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+          <div class="lbl">Data Validation — confirm your numbers before extracting</div>
+          <button class="tbtn tbtn-navy" onclick="runCheck()">Run Check</button>
+        </div>
+        <div id="check-content">
+          <div style="padding:40px;text-align:center;color:var(--slate-light);font-size:14px;">
+            Load data and click Run Check to validate your Trial Balance
+          </div>
+        </div>
       </div>
 
       <!-- SETTINGS -->
@@ -750,12 +764,14 @@ function varCls(n) { return n>0?'pos':n<0?'neg':'neu'; }
 // ─── TAB SWITCHING ────────────────────────────────────────────────
 function switchTab(id) {
   document.querySelectorAll('.tool-tab').forEach((t,i)=>{
-    const ids=['data','report','emails','bs','settings'];
+    const ids=['data','report','emails','bs','check','settings'];
     t.classList.toggle('active', ids[i]===id);
   });
   document.querySelectorAll('.tool-panel').forEach(p=>p.classList.remove('active'));
   document.getElementById('tp-'+id).classList.add('active');
   if(id==='bs' && appData.length) renderBS();
+  if(id==='check' && appData.length) runCheck();
+  if(id==='check' && appData.length) runCheck();
   if(id==='report' && appData.length) { renderPnL(); renderRatios(); }
 }
 
@@ -773,19 +789,19 @@ function updateThresh() {
 // ─── SAMPLE DATA ──────────────────────────────────────────────────
 function loadSample() {
   appData = [
-    {a:'Product Sales',node:'Revenue',ma:4850000,mb:5000000,ya:29100000,yb:30000000,ce:'sales@acme.com',cn:'Rajesh Kumar'},
-    {a:'Service Revenue',node:'Revenue',ma:1200000,mb:1000000,ya:7200000,yb:6000000,ce:'sales@acme.com',cn:'Rajesh Kumar'},
-    {a:'Other Income',node:'Revenue',ma:80000,mb:100000,ya:480000,yb:600000,ce:'finance@acme.com',cn:'Priya Sharma'},
-    {a:'Raw Material',node:'Direct Costs',ma:2100000,mb:2000000,ya:12600000,yb:12000000,ce:'ops@acme.com',cn:'Anil Mehta'},
-    {a:'Direct Labour',node:'Direct Costs',ma:980000,mb:900000,ya:5880000,yb:5400000,ce:'hr@acme.com',cn:'Sunita Rao'},
-    {a:'Subcontracting',node:'Direct Costs',ma:350000,mb:400000,ya:2100000,yb:2400000,ce:'ops@acme.com',cn:'Anil Mehta'},
-    {a:'Salaries',node:'Overheads',ma:600000,mb:600000,ya:3600000,yb:3600000,ce:'hr@acme.com',cn:'Sunita Rao'},
-    {a:'Rent & Utilities',node:'Overheads',ma:210000,mb:200000,ya:1260000,yb:1200000,ce:'admin@acme.com',cn:'Deepak Joshi'},
-    {a:'Marketing',node:'Overheads',ma:150000,mb:250000,ya:900000,yb:1500000,ce:'mktg@acme.com',cn:'Neha Gupta'},
-    {a:'IT & Tech',node:'Overheads',ma:95000,mb:80000,ya:570000,yb:480000,ce:'it@acme.com',cn:'Vikram Singh'},
-    {a:'Interest Expense',node:'Finance Costs',ma:180000,mb:150000,ya:1080000,yb:900000,ce:'finance@acme.com',cn:'Priya Sharma'},
-    {a:'Bank Charges',node:'Finance Costs',ma:12000,mb:10000,ya:72000,yb:60000,ce:'finance@acme.com',cn:'Priya Sharma'},
-    {a:'Income Tax',node:'Tax',ma:220000,mb:200000,ya:1320000,yb:1200000,ce:'finance@acme.com',cn:'Priya Sharma'},
+    {a:'Product Sales',node:'Revenue',dc:'CR',ma:4850000,mb:5000000,ya:29100000,yb:30000000,ce:'sales@acme.com',cn:'Rajesh Kumar'},
+    {a:'Service Revenue',node:'Revenue',dc:'CR',ma:1200000,mb:1000000,ya:7200000,yb:6000000,ce:'sales@acme.com',cn:'Rajesh Kumar'},
+    {a:'Other Income',node:'Revenue',dc:'CR',ma:80000,mb:100000,ya:480000,yb:600000,ce:'finance@acme.com',cn:'Priya Sharma'},
+    {a:'Raw Material',dc:'DR',node:'Direct Costs',ma:2100000,mb:2000000,ya:12600000,yb:12000000,ce:'ops@acme.com',cn:'Anil Mehta'},
+    {a:'Direct Labour',dc:'DR',node:'Direct Costs',ma:980000,mb:900000,ya:5880000,yb:5400000,ce:'hr@acme.com',cn:'Sunita Rao'},
+    {a:'Subcontracting',dc:'DR',node:'Direct Costs',ma:350000,mb:400000,ya:2100000,yb:2400000,ce:'ops@acme.com',cn:'Anil Mehta'},
+    {a:'Salaries',dc:'DR',node:'Overheads',ma:600000,mb:600000,ya:3600000,yb:3600000,ce:'hr@acme.com',cn:'Sunita Rao'},
+    {a:'Rent & Utilities',dc:'DR',node:'Overheads',ma:210000,mb:200000,ya:1260000,yb:1200000,ce:'admin@acme.com',cn:'Deepak Joshi'},
+    {a:'Marketing',dc:'DR',node:'Overheads',ma:150000,mb:250000,ya:900000,yb:1500000,ce:'mktg@acme.com',cn:'Neha Gupta'},
+    {a:'IT & Tech',dc:'DR',node:'Overheads',ma:95000,mb:80000,ya:570000,yb:480000,ce:'it@acme.com',cn:'Vikram Singh'},
+    {a:'Interest Expense',dc:'DR',node:'Finance Costs',ma:180000,mb:150000,ya:1080000,yb:900000,ce:'finance@acme.com',cn:'Priya Sharma'},
+    {a:'Bank Charges',dc:'DR',node:'Finance Costs',ma:12000,mb:10000,ya:72000,yb:60000,ce:'finance@acme.com',cn:'Priya Sharma'},
+    {a:'Income Tax',dc:'DR',node:'Tax',ma:220000,mb:200000,ya:1320000,yb:1200000,ce:'finance@acme.com',cn:'Priya Sharma'},
   ];
   renderPreview();
   renderContactMap();
@@ -795,13 +811,11 @@ function handleUpload(e) {
   const f=e.target.files[0]; if(!f) return;
   const ext=f.name.split('.').pop().toLowerCase();
   const reader=new FileReader();
-
   reader.onerror=()=>alert('Could not read file. Please try again.');
-
   reader.onload=ev=>{
     try {
       let rows=[];
-      if(ext==='csv') {
+      if(ext==='csv'){
         const lines=ev.target.result.trim().split('\n');
         rows=lines.map(l=>l.split(',').map(x=>x.trim().replace(/"/g,'')));
       } else {
@@ -809,96 +823,96 @@ function handleUpload(e) {
         const ws=wb.Sheets[wb.SheetNames[0]];
         rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:'',raw:true});
       }
-
-      // Remove fully empty rows
       rows=rows.filter(r=>r.some(c=>c!==''&&c!==null&&c!==undefined));
       if(!rows.length){alert('File appears empty.');return;}
 
-      // Smart header detection — find row with 3+ of these keywords
-      const KEY=['account','node','mtd actual','mtd budget','ytd actual','ytd budget','contact'];
+      // Smart header detection
+      const KEY=['account','node','mtd','budget','contact'];
       let hIdx=0;
       for(let i=0;i<Math.min(10,rows.length);i++){
         const low=rows[i].map(x=>String(x).toLowerCase().trim());
         const hits=KEY.filter(k=>low.some(c=>c.includes(k)));
         if(hits.length>=3){hIdx=i;break;}
       }
-
       const h=rows[hIdx].map(x=>String(x).trim());
       const col=(names)=>{
-        for(const n of names){
-          const i=h.findIndex(x=>x.toLowerCase().includes(n.toLowerCase()));
-          if(i>=0)return i;
-        }
+        for(const n of names){const i=h.findIndex(x=>x.toLowerCase().includes(n.toLowerCase()));if(i>=0)return i;}
         return -1;
       };
-
-      const iA =col(['account','gl account','description','account name']);
-      const iN =col(['node','category','section','group']);
-      const iMA=col(['mtd actual','actual mtd','current month','mtd act']);
-      const iMB=col(['mtd budget','budget mtd','mtd bud']);
-      const iYA=col(['ytd actual','actual ytd','ytd act']);
-      const iYB=col(['ytd budget','budget ytd','ytd bud']);
-      const iCE=col(['contact email','owner email','email']);
-      const iCN=col(['contact name','owner name','contact','owner']);
+      const iA  = col(['account','gl account','description','account name']);
+      const iN  = col(['node','category','section','group']);
+      const iDC = col(['dr/cr','dr cr','drcr','type','debit credit','dr.cr']);
+      const iMA = col(['mtd actual','actual mtd','current month','mtd act']);
+      const iMB = col(['mtd budget','budget mtd','mtd bud']);
+      const iYA = col(['ytd actual','actual ytd','ytd act']);
+      const iYB = col(['ytd budget','budget ytd','ytd bud']);
+      const iCE = col(['contact email','owner email','email']);
+      const iCN = col(['contact name','owner name','contact','owner']);
 
       if(iA<0||iMA<0||iMB<0){
-        alert('Could not detect required columns.\n\nDetected: '+h.filter(x=>x).join(', ')+'\n\nExpected: Account, MTD Actual, MTD Budget (and optionally Node, YTD, Contact)');
+        alert('Could not detect required columns.\n\nDetected: '+h.filter(x=>x).join(', ')+'\n\nExpected: Account, Node, MTD Actual, MTD Budget. Dr/Cr column is optional but recommended.');
         return;
       }
+
+      const hasDrCr = iDC >= 0;
 
       appData=rows.slice(hIdx+1).map(r=>{
         const g=i=>i>=0&&i<r.length?r[i]:'';
         const acct=String(g(iA)).trim();
-        // Skip blank rows and section header rows (no numeric actual)
         if(!acct||acct.length===0) return null;
         const maRaw=g(iMA);
-        const ma=typeof maRaw==='number'?maRaw:parseFloat(String(maRaw).replace(/,/g,''));
-        if(isNaN(ma)) return null; // section header row — no numeric value
-        const mbRaw=g(iMB);
-        const mb=typeof mbRaw==='number'?mbRaw:parseFloat(String(mbRaw).replace(/,/g,''))||0;
-        const yaRaw=g(iYA);
-        const ya=typeof yaRaw==='number'?yaRaw:parseFloat(String(yaRaw).replace(/,/g,''))||0;
-        const ybRaw=g(iYB);
-        const yb=typeof ybRaw==='number'?ybRaw:parseFloat(String(ybRaw).replace(/,/g,''))||0;
+        const maAbs=typeof maRaw==='number'?Math.abs(maRaw):parseFloat(String(maRaw).replace(/,/g,'').replace(/-/g,''));
+        if(isNaN(maAbs)) return null;
+
+        // Dr/Cr sign logic:
+        // If Dr/Cr column exists: Cr items get negative sign (liability/income convention)
+        // If no Dr/Cr column: use raw value as-is (backward compat)
+        let sign = 1;
+        if(hasDrCr){
+          const dc=String(g(iDC)).trim().toLowerCase();
+          if(dc==='cr'||dc==='credit'||dc==='c') sign=-1;
+          else sign=1; // Dr or blank = positive
+        }
+
+        const parseN=(raw)=>{
+          const v=typeof raw==='number'?Math.abs(raw):parseFloat(String(raw).replace(/,/g,'').replace(/-/g,''))||0;
+          return v*sign;
+        };
+
         return {
-          a:acct,
-          node:String(g(iN)||'Other').trim()||'Other',
-          ma, mb, ya, yb,
-          ce:String(g(iCE)).trim(),
-          cn:String(g(iCN)).trim()
+          a: acct,
+          node: String(g(iN)||'Other').trim()||'Other',
+          dc: hasDrCr?String(g(iDC)).trim().toUpperCase():'',
+          ma: parseN(g(iMA)),
+          mb: parseN(g(iMB)),
+          ya: parseN(g(iYA)),
+          yb: parseN(g(iYB)),
+          ce: String(g(iCE)).trim(),
+          cn: String(g(iCN)).trim()
         };
       }).filter(r=>r&&r.a&&r.a!=='Account'&&r.a!=='S.No');
 
       if(!appData.length){
-        alert('No valid data rows found.\nCheck that your MTD Actual column contains numbers.');
+        alert('No valid data rows found.\nCheck that MTD Actual column contains numbers.');
         return;
       }
-
-      // Show success
-      const nodeList=[...new Set(appData.map(r=>r.node))];
-      console.log('Loaded '+appData.length+' rows across nodes: '+nodeList.join(', '));
-
+      console.log('Loaded '+appData.length+' rows | Dr/Cr column: '+(hasDrCr?'YES':'NO'));
       renderPreview();
       renderContactMap();
       document.getElementById('data-preview').scrollIntoView({behavior:'smooth'});
-
     } catch(err){
-      console.error('Upload error:', err);
-      alert('Error reading file: '+err.message+'\n\nTip: Save the file as .xlsx from Excel and try again.');
+      console.error('Upload error:',err);
+      alert('Error reading file: '+err.message);
     }
   };
-
   if(ext==='csv') reader.readAsText(f);
-  else reader.readAsArrayBuffer(f);
-}
-
-function renderPreview() {
+  else reader.readAsArrayfunction renderPreview() {
   document.getElementById('data-preview').style.display='block';
   document.getElementById('row-count').textContent=appData.length;
   document.getElementById('preview-body').innerHTML=appData.map(r=>{
     const mv=r.ma-r.mb, yv=r.ya-r.yb;
     const mp=r.mb?(mv/r.mb*100):0, yp=r.yb?(yv/r.yb*100):0;
-    return `<tr><td>${r.a}</td><td><span class="badge badge-node">${r.node}</span></td>
+    return `<tr><td>${r.a}</td><td><span class="badge badge-node">${r.node}</span></td><td><span class="badge ${r.dc==='CR'?'badge-fav':'badge-unfav'}">${r.dc||'—'}</span></td>
       <td>${fmt(r.ma)}</td><td>${fmt(r.mb)}</td>
       <td class="${varCls(mv)}">${fmt(mv)}</td>
       <td class="${varCls(mp)}">${fmtP(mp)}</td>
@@ -906,6 +920,7 @@ function renderPreview() {
       <td class="${varCls(yv)}">${fmt(yv)}</td>
       <td style="font-size:11px;color:var(--slate-light);">${r.cn}</td></tr>`;
   }).join('');
+}).join('');
 }
 
 // ─── GENERATE REPORT ─────────────────────────────────────────────
@@ -916,6 +931,7 @@ function generateReport() {
   renderPnL();
   renderRatios();
   generateEmails();
+  runCheck();
   switchTab('report');
 }
 
@@ -927,33 +943,18 @@ function updateMetrics() {
     });
     return;
   }
-  const revNodes=getNodes('pnl-revenue');
-  const dirNodes=getNodes('pnl-direct');
-  const ohNodes=getNodes('pnl-overhead');
-  const depNodes=getNodes('pnl-depn');
-  const finNodes=getNodes('pnl-finance');
-  const taxNodes=getNodes('pnl-tax');
-  const revA=sumNode(revNodes,'ma'), revB=sumNode(revNodes,'mb');
-  const dirA=sumNode(dirNodes,'ma');
-  const ohA=sumNode(ohNodes,'ma');
-  const depA=sumNode(depNodes,'ma');
-  const finA=sumNode(finNodes,'ma');
-  const taxA=sumNode(taxNodes,'ma');
-  const gpA=revA-dirA;
-  const ebitdaA=gpA-ohA;
-  const ebitA=ebitdaA-depA;
-  const pbtA=ebitA-finA;
-  const patA=pbtA-taxA;
+  // Always use computePnL() which has IFRS fallback defaults built in
+  const {revA,revB,gpA,ebitdaA,ebitA,pbtA,patA}=computePnL();
   const vp=revB?(revA-revB)/revB*100:0;
+  const set=(id,val)=>{
+    const el=document.getElementById(id);
+    if(!el) return;
+    el.textContent=fmt(val);
+    el.className='metric-val '+(val>=0?'pos':'neg');
+  };
   document.getElementById('m-rev').textContent=fmt(revA);
-  const gp=document.getElementById('m-gp');
-  if(gp){gp.textContent=fmt(gpA);gp.className='metric-val '+(gpA>=0?'pos':'neg');}
-  const eb=document.getElementById('m-ebitda');
-  if(eb){eb.textContent=fmt(ebitdaA);eb.className='metric-val '+(ebitdaA>=0?'pos':'neg');}
-  const pb=document.getElementById('m-pbt');
-  if(pb){pb.textContent=fmt(pbtA);pb.className='metric-val '+(pbtA>=0?'pos':'neg');}
-  const pa=document.getElementById('m-pat');
-  if(pa){pa.textContent=fmt(patA);pa.className='metric-val '+(patA>=0?'pos':'neg');}
+  set('m-gp',gpA); set('m-ebitda',ebitdaA);
+  set('m-pbt',pbtA); set('m-pat',patA);
   const mv=document.getElementById('m-var');
   if(mv){mv.textContent=fmtP(vp);mv.className='metric-val '+(vp>=0?'pos':'neg');}
 }
@@ -1279,38 +1280,64 @@ function sumNode(nodeList, field='ma') {
 function computePnL() {
   const revN=getNodes('pnl-revenue',PNL_DEFAULTS.revenue);
   const dirN=getNodes('pnl-direct',PNL_DEFAULTS.direct);
-  const ohN=getNodes('pnl-overhead',PNL_DEFAULTS.overhead);
+  const ohN =getNodes('pnl-overhead',PNL_DEFAULTS.overhead);
   const depN=getNodes('pnl-depn',PNL_DEFAULTS.depn);
   const finN=getNodes('pnl-finance',PNL_DEFAULTS.finance);
   const taxN=getNodes('pnl-tax',PNL_DEFAULTS.tax);
-  const s=(n,f)=>sumNode(n,f);
-  const revA=s(revN,'ma'),revB=s(revN,'mb'),revYA=s(revN,'ya'),revYB=s(revN,'yb');
-  const dirA=s(dirN,'ma'),dirB=s(dirN,'mb'),dirYA=s(dirN,'ya'),dirYB=s(dirN,'yb');
-  const ohA=s(ohN,'ma'),ohB=s(ohN,'mb'),ohYA=s(ohN,'ya'),ohYB=s(ohN,'yb');
-  const depA=s(depN,'ma'),depB=s(depN,'mb'),depYA=s(depN,'ya'),depYB=s(depN,'yb');
-  const finA=s(finN,'ma'),finB=s(finN,'mb'),finYA=s(finN,'ya'),finYB=s(finN,'yb');
-  const taxA=s(taxN,'ma'),taxB=s(taxN,'mb'),taxYA=s(taxN,'ya'),taxYB=s(taxN,'yb');
-  const gpA=revA-dirA,gpB=revB-dirB,gpYA=revYA-dirYA,gpYB=revYB-dirYB;
-  const ebitdaA=gpA-ohA,ebitdaB=gpB-ohB,ebitdaYA=gpYA-ohYA,ebitdaYB=gpYB-ohYB;
-  const ebitA=ebitdaA-depA,ebitB=ebitdaB-depB,ebitYA=ebitdaYA-depYA,ebitYB=ebitdaYB-depYB;
-  const pbtA=ebitA-finA,pbtB=ebitB-finB,pbtYA=ebitYA-finYA,pbtYB=ebitYB-finYB;
-  const patA=pbtA-taxA,patB=pbtB-taxB,patYA=pbtYA-taxYA,patYB=pbtYB-taxYB;
-  return {revA,revB,revYA,revYB,dirA,dirB,dirYA,dirYB,ohA,ohB,ohYA,ohYB,
-          depA,depB,depYA,depYB,finA,finB,finYA,finYB,taxA,taxB,taxYA,taxYB,
-          gpA,gpB,gpYA,gpYB,ebitdaA,ebitdaB,ebitdaYA,ebitdaYB,
-          ebitA,ebitB,ebitYA,ebitYB,pbtA,pbtB,pbtYA,pbtYB,patA,patB,patYA,patYB};
+
+  // sumIncome: income items (Cr) may be stored negative — take abs to get positive amount
+  // sumCost: cost items (Dr) are always positive
+  const sumIncome=(nodes,f)=>Math.abs(sumNode(nodes,f));
+  const sumCost  =(nodes,f)=>Math.abs(sumNode(nodes,f));
+
+  const revA =sumIncome(revN,'ma'), revB =sumIncome(revN,'mb');
+  const revYA=sumIncome(revN,'ya'), revYB=sumIncome(revN,'yb');
+  const dirA =sumCost(dirN,'ma'),  dirB =sumCost(dirN,'mb');
+  const dirYA=sumCost(dirN,'ya'),  dirYB=sumCost(dirN,'yb');
+  const ohA  =sumCost(ohN,'ma'),   ohB  =sumCost(ohN,'mb');
+  const ohYA =sumCost(ohN,'ya'),   ohYB =sumCost(ohN,'yb');
+  const depA =sumCost(depN,'ma'),  depB =sumCost(depN,'mb');
+  const depYA=sumCost(depN,'ya'),  depYB=sumCost(depN,'yb');
+  const finA =sumCost(finN,'ma'),  finB =sumCost(finN,'mb');
+  const finYA=sumCost(finN,'ya'),  finYB=sumCost(finN,'yb');
+  const taxA =sumCost(taxN,'ma'),  taxB =sumCost(taxN,'mb');
+  const taxYA=sumCost(taxN,'ya'),  taxYB=sumCost(taxN,'yb');
+
+  const gpA=revA-dirA,           gpB=revB-dirB;
+  const gpYA=revYA-dirYA,        gpYB=revYB-dirYB;
+  const ebitdaA=gpA-ohA,         ebitdaB=gpB-ohB;
+  const ebitdaYA=gpYA-ohYA,      ebitdaYB=gpYB-ohYB;
+  const ebitA=ebitdaA-depA,      ebitB=ebitdaB-depB;
+  const ebitYA=ebitdaYA-depYA,   ebitYB=ebitdaYB-depYB;
+  const pbtA=ebitA-finA,         pbtB=ebitB-finB;
+  const pbtYA=ebitYA-finYA,      pbtYB=ebitYB-finYB;
+  const patA=pbtA-taxA,          patB=pbtB-taxB;
+  const patYA=pbtYA-taxYA,       patYB=pbtYB-taxYB;
+
+  return {revA,revB,revYA,revYB, dirA,dirB,dirYA,dirYB,
+          ohA,ohB,ohYA,ohYB,     depA,depB,depYA,depYB,
+          finA,finB,finYA,finYB, taxA,taxB,taxYA,taxYB,
+          gpA,gpB,gpYA,gpYB,
+          ebitdaA,ebitdaB,ebitdaYA,ebitdaYB,
+          ebitA,ebitB,ebitYA,ebitYB,
+          pbtA,pbtB,pbtYA,pbtYB,
+          patA,patB,patYA,patYB};
 }
 
 function computeBS() {
   const ncaN=getNodes('bs-nca',BS_DEFAULTS.nca);
-  const caN=getNodes('bs-ca',BS_DEFAULTS.ca);
-  const clN=getNodes('bs-cl',BS_DEFAULTS.cl);
+  const caN =getNodes('bs-ca', BS_DEFAULTS.ca);
+  const clN =getNodes('bs-cl', BS_DEFAULTS.cl);
   const nclN=getNodes('bs-ncl',BS_DEFAULTS.ncl);
-  const eqN=getNodes('bs-eq',BS_DEFAULTS.eq);
+  const eqN =getNodes('bs-eq', BS_DEFAULTS.eq);
+  // Assets (Dr) = positive; Liab/Equity (Cr) may be stored negative — use raw sum
   return {
     ncaN,caN,clN,nclN,eqN,
-    ncaA:sumNode(ncaN),caA:sumNode(caN),
-    clA:sumNode(clN),nclA:sumNode(nclN),eqA:sumNode(eqN)
+    ncaA: Math.abs(sumNode(ncaN)),
+    caA:  Math.abs(sumNode(caN)),
+    clA:  sumNode(clN),   // keep sign — renderBS uses Math.abs()
+    nclA: sumNode(nclN),  // keep sign
+    eqA:  sumNode(eqN)    // keep sign
   };
 }
 
@@ -1459,21 +1486,182 @@ function buildEmailBody(name,period,items,sender,days) {
   return `Dear ${name},\n\nAs part of our ${period} MIS close, we require variance commentary for the following item(s):\n\n${lines}\n\nKindly provide the key reasons for each variance, noting any one-off items and expected trajectory.\n\nPlease revert within ${days||2} working day(s).\n\nThank you,\n${sender||'Finance Team'}`;
 }
 
+// ─── DATA CHECK ──────────────────────────────────────────────────
+function runCheck() {
+  const container = document.getElementById('check-content');
+  if(!appData.length){
+    container.innerHTML='<div style="padding:40px;text-align:center;color:var(--slate-light);">Load data first.</div>';
+    return;
+  }
+
+  const sc=cur(), sk=scale();
+  const fv=n=>sc+(n/sk).toLocaleString('en-IN',{minimumFractionDigits:1,maximumFractionDigits:1});
+  const pct=n=>n.toFixed(1)+'%';
+  const ok  ='<span style="color:#1a7a4a;font-weight:600;">✓</span>';
+  const warn='<span style="color:#c0392b;font-weight:600;">⚠</span>';
+  const info='<span style="color:#185FA5;font-weight:600;">ℹ</span>';
+
+  // ── 1. Row summary ────────────────────────────────────────────
+  const totalRows=appData.length;
+  const hasDrCr=appData.some(r=>r.dc&&r.dc!=='');
+  const nodes=[...new Set(appData.map(r=>r.node))];
+  const nodeCounts=nodes.map(n=>({n,count:appData.filter(r=>r.node===n).length}));
+
+  // ── 2. Column coverage ────────────────────────────────────────
+  const hasYTD=appData.some(r=>r.ya!==0||r.yb!==0);
+  const hasContacts=appData.some(r=>r.ce&&r.ce.includes('@'));
+  const missingContacts=appData.filter(r=>!r.ce||!r.ce.includes('@'));
+  const missingNode=appData.filter(r=>!r.node||r.node==='Other');
+
+  // ── 3. P&L figures ───────────────────────────────────────────
+  const p=computePnL();
+  const {revA,dirA,ohA,depA,finA,taxA,gpA,ebitdaA,ebitA,pbtA,patA,revYA,patYA}=p;
+
+  // ── 4. BS figures ─────────────────────────────────────────────
+  const {ncaA,caA,clA,nclA,eqA}=computeBS();
+  const totalAssets=ncaA+caA;
+  const totalLiabEqRaw=Math.abs(nclA)+Math.abs(clA)+Math.abs(eqA);
+  const bsDiff=totalAssets-totalLiabEqRaw;
+
+  // ── 5. Node classification check ─────────────────────────────
+  const allPnLNodes=[...PNL_DEFAULTS.revenue,...PNL_DEFAULTS.direct,...PNL_DEFAULTS.overhead,
+                     ...PNL_DEFAULTS.depn,...PNL_DEFAULTS.finance,...PNL_DEFAULTS.tax];
+  const allBSNodes=[...BS_DEFAULTS.nca,...BS_DEFAULTS.ca,...BS_DEFAULTS.cl,
+                    ...BS_DEFAULTS.ncl,...BS_DEFAULTS.eq];
+  const unclassified=nodes.filter(n=>
+    !allPnLNodes.some(d=>n.toLowerCase().trim()===d) &&
+    !allBSNodes.some(d=>n.toLowerCase().trim()===d)
+  );
+
+  // ── 6. TB totals reconciliation ───────────────────────────────
+  const totalDebits  =appData.filter(r=>r.dc==='DR'||r.dc==='').reduce((s,r)=>s+Math.abs(r.ma),0);
+  const totalCredits =appData.filter(r=>r.dc==='CR').reduce((s,r)=>s+Math.abs(r.ma),0);
+  const tbDiff=Math.abs(totalDebits-totalCredits);
+
+  // ── Build HTML ────────────────────────────────────────────────
+  const section=(title,body,color='var(--navy)')=>
+    `<div style="margin-bottom:20px;">
+       <div style="font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;
+                   color:${color};margin-bottom:8px;padding:6px 12px;
+                   background:${color==='var(--navy)'?'#f1f5fb':color==='#1a7a4a'?'#f0faf5':'#fdf2f2'};
+                   border-radius:6px;">${title}</div>
+       <div style="border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;">
+         <table style="width:100%;border-collapse:collapse;font-size:13px;">
+           ${body}
+         </table>
+       </div>
+     </div>`;
+
+  const row=(label,value,status,note)=>
+    `<tr style="border-bottom:1px solid var(--border);">
+       <td style="padding:9px 14px;color:var(--slate);width:35%;">${label}</td>
+       <td style="padding:9px 14px;font-weight:500;">${value}</td>
+       <td style="padding:9px 14px;width:30px;">${status||''}</td>
+       <td style="padding:9px 14px;font-size:11px;color:var(--slate-light);">${note||''}</td>
+     </tr>`;
+
+  let html='';
+
+  // Section 1: Data load summary
+  html+=section('1. Data Load Summary',
+    row('Total line items loaded', totalRows, totalRows>0?ok:warn, 'All non-blank data rows from TB')+
+    row('Nodes detected', nodes.length+' nodes', ok, nodes.join(', '))+
+    row('Dr/Cr column', hasDrCr?'Present':'Not found', hasDrCr?ok:info,
+        hasDrCr?'Sign applied automatically':'Numbers used as-is from TB')+
+    row('YTD data', hasYTD?'Present':'Not found', hasYTD?ok:info,
+        hasYTD?'YTD columns populated':'YTD will show zero')+
+    row('Contact emails', hasContacts?'Present':'Not found', hasContacts?ok:warn,
+        missingContacts.length>0?missingContacts.length+' rows missing email':'All rows have email')
+  );
+
+  // Section 2: P&L reconciliation
+  const gpPct=revA?gpA/revA*100:0;
+  const patPct=revA?patA/revA*100:0;
+  html+=section('2. P&L Reconciliation (MTD Actuals)',
+    row('Revenue', fv(revA), revA!==0?ok:warn, revA===0?'Check Revenue node mapping in Settings':'')+
+    row('Direct Costs', fv(dirA), ok, '')+
+    row('Gross Profit', fv(gpA), gpA>=0?ok:warn, 'GP Margin: '+pct(gpPct))+
+    row('Overheads', fv(ohA), ok, '')+
+    row('EBITDA', fv(ebitdaA), ok, 'Margin: '+pct(revA?ebitdaA/revA*100:0)+'%')+
+    row('Depreciation', fv(depA), ok, '')+
+    row('Finance Costs', fv(finA), ok, '')+
+    row('PBT', fv(pbtA), ok, 'Margin: '+pct(revA?pbtA/revA*100:0)+'%')+
+    row('Tax', fv(taxA), ok, revA?'Eff. rate: '+pct(pbtA?taxA/pbtA*100:0):'—')+
+    row('PAT (Net Profit)', fv(patA), patA>=0?ok:warn, 'Margin: '+pct(patPct))
+  );
+
+  // Section 3: BS reconciliation
+  html+=section('3. Balance Sheet Reconciliation',
+    row('Total Assets', fv(totalAssets), totalAssets>0?ok:warn, 'Non-current + Current assets')+
+    row('Total Liabilities', fv(Math.abs(nclA)+Math.abs(clA)), ok, 'NCL + CL')+
+    row('Total Equity', fv(Math.abs(eqA)), ok, 'From TB')+
+    row('Unappropriated P&L bridge', fv(Math.abs(bsDiff)),
+        Math.abs(bsDiff)<1?ok:info,
+        'Assets − (Liab+Eq) = current period P&L in TB')+
+    row('BS balance check',
+        Math.abs(bsDiff)<1?'Balanced':'Difference: '+fv(Math.abs(bsDiff)),
+        Math.abs(bsDiff)<1?ok:info,
+        'Normal for in-year TB before P&L closing entry')
+  );
+
+  // Section 4: Node classification
+  const nodeRows=nodeCounts.map(({n,count})=>{
+    const isPnL=allPnLNodes.some(d=>n.toLowerCase().trim()===d);
+    const isBS=allBSNodes.some(d=>n.toLowerCase().trim()===d);
+    const type=isPnL?'P&L':isBS?'Balance Sheet':'⚠ Unclassified';
+    const status=isPnL||isBS?ok:warn;
+    return row(n, count+' rows', status, type);
+  }).join('');
+  html+=section('4. Node Classification',
+    nodeRows+
+    (unclassified.length>0?row('Unclassified nodes',unclassified.join(', '),warn,'Go to Settings → P&L or BS node mapping to classify'):'')
+  );
+
+  // Section 5: TB trial (if Dr/Cr present)
+  if(hasDrCr){
+    html+=section('5. TB Trial Balance Check (Dr vs Cr)',
+      row('Total Debits (DR)', fv(totalDebits), ok, '')+
+      row('Total Credits (CR)', fv(totalCredits), ok, '')+
+      row('Difference', fv(tbDiff), tbDiff<1?ok:warn,
+          tbDiff<1?'TB is in balance':'TB has a debit/credit imbalance — check source data')
+    );
+  }
+
+  // Section 6: Data completeness checklist
+  const checks=[
+    {label:'All rows have Account name', pass:appData.every(r=>r.a), fix:'Remove blank account rows from TB'},
+    {label:'All rows have Node classification', pass:missingNode.length===0, fix:missingNode.length+' rows show as "Other"'},
+    {label:'MTD Actual populated (non-zero rows)', pass:appData.some(r=>r.ma!==0), fix:'Check MTD Actual column mapping'},
+    {label:'MTD Budget populated', pass:appData.some(r=>r.mb!==0), fix:'Check MTD Budget column mapping'},
+    {label:'YTD data populated', pass:hasYTD, fix:'YTD columns empty — add YTD Actual/Budget to TB'},
+    {label:'Contact emails mapped', pass:missingContacts.length===0, fix:missingContacts.length+' rows missing email'},
+    {label:'Revenue node recognised', pass:revA!==0, fix:'Check Settings → P&L → Revenue nodes'},
+    {label:'P&L nodes all classified', pass:unclassified.filter(n=>['revenue','costs','overheads'].some(k=>n.toLowerCase().includes(k))).length===0, fix:'Some P&L nodes not in Settings'},
+    {label:'BS nodes all classified', pass:unclassified.filter(n=>['assets','liabilities','equity','loans'].some(k=>n.toLowerCase().includes(k))).length===0, fix:'Some BS nodes not in Settings'},
+  ];
+  const checkRows=checks.map(c=>
+    row(c.label, c.pass?'Pass':'Fail', c.pass?ok:warn, c.pass?'':c.fix)
+  ).join('');
+  html+=section('6. Completeness Checklist', checkRows);
+
+  container.innerHTML=html;
+}
+
 // ─── EXPORT ──────────────────────────────────────────────────────
 function downloadTemplate() {
   const wb=XLSX.utils.book_new();
-  const headers=[['Account','Node','MTD Actual','MTD Budget','YTD Actual','YTD Budget','Contact Email','Contact Name']];
+  const headers=[['Account','Node','Dr/Cr','MTD Actual','MTD Budget','YTD Actual','YTD Budget','Contact Email','Contact Name']];
   const sample=[
-    ['Product Sales','Revenue',4850000,5000000,29100000,30000000,'sales@company.com','John Smith'],
-    ['Service Revenue','Revenue',1200000,1000000,7200000,6000000,'sales@company.com','John Smith'],
-    ['Raw Material','Direct Costs',2100000,2000000,12600000,12000000,'ops@company.com','Priya Mehta'],
-    ['Direct Labour','Direct Costs',980000,900000,5880000,5400000,'hr@company.com','Sunita Rao'],
-    ['Salaries','Overheads',600000,600000,3600000,3600000,'hr@company.com','Sunita Rao'],
-    ['Marketing','Overheads',150000,250000,900000,1500000,'mktg@company.com','Neha Gupta'],
-    ['Interest Expense','Finance Costs',180000,150000,1080000,900000,'finance@company.com','Raj Sharma'],
+    ['Product Sales','Revenue','Cr',4850000,5000000,29100000,30000000,'sales@company.com','John Smith'],
+    ['Service Revenue','Revenue','Cr',1200000,1000000,7200000,6000000,'sales@company.com','John Smith'],
+    ['Raw Material','Direct Costs','Dr',2100000,2000000,12600000,12000000,'ops@company.com','Priya Mehta'],
+    ['Direct Labour','Direct Costs','Dr',980000,900000,5880000,5400000,'hr@company.com','Sunita Rao'],
+    ['Salaries','Overheads','Dr',600000,600000,3600000,3600000,'hr@company.com','Sunita Rao'],
+    ['Marketing','Overheads','Dr',150000,250000,900000,1500000,'mktg@company.com','Neha Gupta'],
+    ['Interest Expense','Finance Costs','Dr',180000,150000,1080000,900000,'finance@company.com','Raj Sharma'],
   ];
   const ws=XLSX.utils.aoa_to_sheet([...headers,...sample]);
-  ws['!cols']=[{wch:22},{wch:16},{wch:14},{wch:14},{wch:14},{wch:14},{wch:26},{wch:18}];
+  ws['!cols']=[{wch:22},{wch:16},{wch:8},{wch:14},{wch:14},{wch:14},{wch:14},{wch:26},{wch:18}];
   XLSX.utils.book_append_sheet(wb,ws,'Trial Balance');
   XLSX.writeFile(wb,'MIS_Template.xlsx');
 }
